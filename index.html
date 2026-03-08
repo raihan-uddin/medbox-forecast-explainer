@@ -1,0 +1,1486 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MedBox AI Forecast Engine — How It Works</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50:'#eef2ff', 100:'#e0e7ff', 200:'#c7d2fe', 300:'#a5b4fc', 400:'#818cf8', 500:'#6366f1', 600:'#4f46e5', 700:'#4338ca', 800:'#3730a3', 900:'#312e81' },
+            teal:  { 400:'#2dd4bf', 500:'#14b8a6', 600:'#0d9488' },
+          },
+          animation: {
+            'float':      'float 4s ease-in-out infinite',
+            'float-slow': 'float 6s ease-in-out infinite',
+            'pulse-slow': 'pulse 3s ease-in-out infinite',
+            'slide-up':   'slideUp 0.6s ease-out forwards',
+            'flow':       'flow 2s ease-in-out infinite',
+            'dash':       'dash 1.5s linear infinite',
+          },
+          keyframes: {
+            float:   { '0%,100%':{ transform:'translateY(0)' }, '50%':{ transform:'translateY(-12px)' } },
+            slideUp: { from:{ opacity:'0', transform:'translateY(30px)' }, to:{ opacity:'1', transform:'translateY(0)' } },
+            flow:    { '0%,100%':{ opacity:'.4' }, '50%':{ opacity:'1' } },
+            dash:    { to:{ strokeDashoffset:'-20' } },
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* ── base ───────────────────────────────────────────── */
+    html { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    body { background:#0a0a0f; color:#e2e8f0; }
+
+    /* ── gradient text ──────────────────────────────────── */
+    .gradient-text { background: linear-gradient(135deg,#818cf8 0%,#2dd4bf 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .gradient-text-warm { background: linear-gradient(135deg,#f59e0b 0%,#ef4444 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+
+    /* ── glass card ─────────────────────────────────────── */
+    .glass { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); backdrop-filter:blur(12px); }
+    .glass-light { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); }
+
+    /* ── hero particles ─────────────────────────────────── */
+    .particle { position:absolute; border-radius:50%; animation:float var(--dur,4s) ease-in-out infinite; animation-delay:var(--delay,0s); opacity:.25; }
+
+    /* ── section fade-in on scroll ──────────────────────── */
+    .reveal { opacity:0; transform:translateY(40px); transition:opacity .7s ease, transform .7s ease; }
+    .reveal.visible { opacity:1; transform:translateY(0); }
+
+    /* ── pipeline arrow ─────────────────────────────────── */
+    .pipeline-arrow { width:2px; height:36px; background:linear-gradient(to bottom,#6366f1,#2dd4bf); margin:0 auto; position:relative; }
+    .pipeline-arrow::after { content:''; position:absolute; bottom:-6px; left:50%; transform:translateX(-50%); border-left:5px solid transparent; border-right:5px solid transparent; border-top:8px solid #2dd4bf; }
+
+    /* ── step connector ─────────────────────────────────── */
+    .step-line { width:2px; height:48px; background:linear-gradient(to bottom,#4f46e5,#14b8a6); margin:0 auto; }
+
+    /* ── animated dots on flow ──────────────────────────── */
+    @keyframes travel { 0%{ top:0; opacity:0 } 10%{ opacity:1 } 90%{ opacity:1 } 100%{ top:100%; opacity:0 } }
+    .dot-travel { position:absolute; width:6px; height:6px; border-radius:50%; background:#818cf8; left:50%; transform:translateX(-50%); animation:travel 2s linear infinite; }
+
+    /* ── SARIMA badge ───────────────────────────────────── */
+    .sarima-badge { display:inline-flex; align-items:center; gap:6px; padding:4px 14px; border-radius:999px; font-size:.75rem; font-weight:600; letter-spacing:.04em; }
+
+    /* ── hover lift ─────────────────────────────────────── */
+    .lift { transition:transform .25s ease, box-shadow .25s ease; }
+    .lift:hover { transform:translateY(-4px); box-shadow:0 20px 40px rgba(99,102,241,.25); }
+
+    /* ── nav pill active ────────────────────────────────── */
+    .nav-pill { padding:6px 16px; border-radius:999px; font-size:.8rem; font-weight:500; transition:all .2s; color:#94a3b8; }
+    .nav-pill:hover { color:#e2e8f0; background:rgba(255,255,255,.06); }
+    .nav-pill.active { color:#fff; background:#4f46e5; }
+
+    /* ── chart container ────────────────────────────────── */
+    .chart-wrap { position:relative; height:280px; }
+
+    /* ── glow ring ──────────────────────────────────────── */
+    .glow-ring { box-shadow:0 0 0 1px rgba(99,102,241,.3), 0 0 24px rgba(99,102,241,.15); }
+
+    /* ── scroll bar ─────────────────────────────────────── */
+    ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-track { background:#0a0a0f; } ::-webkit-scrollbar-thumb { background:#4f46e5; border-radius:3px; }
+
+    /* ── animated underline ─────────────────────────────── */
+    .anim-underline { position:relative; } .anim-underline::after { content:''; position:absolute; bottom:-2px; left:0; width:0; height:2px; background:linear-gradient(90deg,#6366f1,#2dd4bf); transition:width .4s ease; } .anim-underline:hover::after { width:100%; }
+
+    /* ── velocity chip ──────────────────────────────────── */
+    .vel-dead   { background:rgba(239,68,68,.15);  color:#f87171; border:1px solid rgba(239,68,68,.3); }
+    .vel-slow   { background:rgba(245,158,11,.12); color:#fbbf24; border:1px solid rgba(245,158,11,.3); }
+    .vel-medium { background:rgba(59,130,246,.12); color:#60a5fa; border:1px solid rgba(59,130,246,.3); }
+    .vel-fast   { background:rgba(34,197,94,.12);  color:#4ade80; border:1px solid rgba(34,197,94,.3); }
+
+    /* ── number counter ─────────────────────────────────── */
+    @keyframes countUp { from { opacity:0; transform:scale(.8); } to { opacity:1; transform:scale(1); } }
+    .count-badge { animation:countUp .5s ease forwards; }
+
+    /* ── responsive table fix ───────────────────────────── */
+    .param-table th { font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color:#64748b; }
+    .param-table td { font-size:.85rem; }
+  </style>
+</head>
+
+<body>
+
+<!-- ════════════════════════════════════════════════════════════
+     STICKY NAV
+═══════════════════════════════════════════════════════════════ -->
+<nav class="fixed top-0 left-0 right-0 z-50 glass border-b border-white/5">
+  <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-2">
+      <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-brand-500 to-teal-500 flex items-center justify-center text-xs font-bold">M</div>
+      <span class="font-semibold text-sm hidden sm:block">MedBox Forecast Engine</span>
+    </div>
+    <div class="flex gap-1 overflow-x-auto no-scrollbar">
+      <a href="#overview"  class="nav-pill whitespace-nowrap">Overview</a>
+      <a href="#pipeline"  class="nav-pill whitespace-nowrap">Pipeline</a>
+      <a href="#ema"       class="nav-pill whitespace-nowrap">EMA</a>
+      <a href="#sarima"    class="nav-pill whitespace-nowrap">SARIMA</a>
+      <a href="#ml"        class="nav-pill whitespace-nowrap">ML Layer</a>
+      <a href="#example"   class="nav-pill whitespace-nowrap">Example</a>
+      <a href="#impact"    class="nav-pill whitespace-nowrap">Impact</a>
+    </div>
+  </div>
+</nav>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     HERO
+═══════════════════════════════════════════════════════════════ -->
+<section id="hero" class="relative min-h-screen flex flex-col items-center justify-center overflow-hidden pt-16 pb-24">
+
+  <!-- animated background blobs -->
+  <div class="absolute inset-0 overflow-hidden pointer-events-none">
+    <div class="particle w-72 h-72 bg-brand-600 rounded-full -top-20 -left-20 blur-3xl" style="--dur:6s;--delay:0s;"></div>
+    <div class="particle w-64 h-64 bg-teal-500  rounded-full top-1/3 right-0  blur-3xl" style="--dur:8s;--delay:1s;"></div>
+    <div class="particle w-48 h-48 bg-purple-700 rounded-full bottom-0 left-1/3 blur-3xl" style="--dur:7s;--delay:.5s;"></div>
+
+    <!-- floating data points -->
+    <svg class="absolute inset-0 w-full h-full opacity-20" viewBox="0 0 800 600" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%"   stop-color="#6366f1" stop-opacity=".6"/>
+          <stop offset="100%" stop-color="#2dd4bf" stop-opacity=".6"/>
+        </linearGradient>
+      </defs>
+      <!-- historical line -->
+      <polyline points="60,420 120,390 180,370 240,400 300,350 360,330 420,310 480,290 540,260" fill="none" stroke="url(#lineGrad)" stroke-width="2" stroke-dasharray="6 3">
+        <animate attributeName="stroke-dashoffset" from="0" to="-20" dur="1.5s" repeatCount="indefinite"/>
+      </polyline>
+      <!-- forecast dotted continuation -->
+      <polyline points="540,260 600,240 660,220 720,200 780,180" fill="none" stroke="#2dd4bf" stroke-width="2" stroke-dasharray="4 6" opacity=".7">
+        <animate attributeName="stroke-dashoffset" from="0" to="-20" dur="1s" repeatCount="indefinite"/>
+      </polyline>
+      <!-- data dots -->
+      <circle cx="60"  cy="420" r="4" fill="#6366f1" class="animate-pulse-slow"/>
+      <circle cx="180" cy="370" r="4" fill="#6366f1"/>
+      <circle cx="300" cy="350" r="4" fill="#818cf8"/>
+      <circle cx="420" cy="310" r="4" fill="#818cf8"/>
+      <circle cx="540" cy="260" r="5" fill="#2dd4bf"/>
+      <circle cx="660" cy="220" r="4" fill="#2dd4bf" opacity=".6"/>
+      <circle cx="780" cy="180" r="4" fill="#2dd4bf" opacity=".4"/>
+      <!-- forecast label box -->
+      <rect x="620" y="140" width="110" height="28" rx="6" fill="rgba(45,212,191,.15)" stroke="rgba(45,212,191,.4)" stroke-width="1"/>
+      <text x="675" y="159" text-anchor="middle" fill="#2dd4bf" font-size="11" font-family="sans-serif">Forecast →</text>
+    </svg>
+  </div>
+
+  <div class="relative z-10 max-w-4xl mx-auto px-6 text-center">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass text-xs font-semibold text-brand-300 mb-8 border border-brand-500/30">
+      <span class="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
+      AI-Powered Demand Intelligence
+    </div>
+
+    <h1 class="text-4xl sm:text-6xl font-extrabold leading-tight mb-6">
+      How the <span class="gradient-text">MedBox AI</span><br/>Forecast Engine Works
+    </h1>
+
+    <p class="text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed">
+      Every day, the system studies historical sales patterns, detects trends, and predicts
+      future demand — so the right medicines are always in stock, automatically.
+    </p>
+
+    <!-- hero stat cards -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto mb-12">
+      <div class="glass rounded-2xl p-4 lift">
+        <div class="text-2xl font-bold gradient-text">10k+</div>
+        <div class="text-xs text-slate-400 mt-1">SKUs Forecast Daily</div>
+      </div>
+      <div class="glass rounded-2xl p-4 lift">
+        <div class="text-2xl font-bold gradient-text">5</div>
+        <div class="text-xs text-slate-400 mt-1">Days Ahead Predicted</div>
+      </div>
+      <div class="glass rounded-2xl p-4 lift">
+        <div class="text-2xl font-bold gradient-text">3</div>
+        <div class="text-xs text-slate-400 mt-1">Model Layers Blended</div>
+      </div>
+      <div class="glass rounded-2xl p-4 lift">
+        <div class="text-2xl font-bold gradient-text">24h</div>
+        <div class="text-xs text-slate-400 mt-1">Auto-run Cycle</div>
+      </div>
+    </div>
+
+    <a href="#overview" class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-brand-600 hover:bg-brand-500 transition font-semibold text-sm">
+      Explore How It Works
+      <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+    </a>
+  </div>
+
+  <!-- scroll hint -->
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 opacity-40">
+    <span class="text-xs">Scroll</span>
+    <div class="w-px h-8 bg-gradient-to-b from-slate-400 to-transparent animate-bounce"></div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     SYSTEM OVERVIEW
+═══════════════════════════════════════════════════════════════ -->
+<section id="overview" class="py-24 px-6">
+  <div class="max-w-6xl mx-auto">
+
+    <div class="text-center mb-16 reveal">
+      <div class="text-brand-400 text-sm font-semibold uppercase tracking-widest mb-3">System Overview</div>
+      <h2 class="text-3xl sm:text-5xl font-bold mb-4">The Big Picture</h2>
+      <p class="text-slate-400 max-w-xl mx-auto">Five stages transform raw sales history into an actionable daily forecast.</p>
+    </div>
+
+    <!-- five-step vertical flow (mobile) / horizontal (desktop) -->
+    <div class="flex flex-col lg:flex-row items-center justify-center gap-0 lg:gap-0 reveal">
+
+      <!-- Step helper macro -->
+      <div class="flex flex-col lg:flex-row items-center w-full">
+
+        <!-- 1 -->
+        <div class="flex flex-col items-center flex-1">
+          <div class="w-16 h-16 rounded-2xl glass-light flex items-center justify-center text-2xl mb-3 lift glow-ring">🗃️</div>
+          <div class="text-sm font-semibold text-center">Sales Data</div>
+          <div class="text-xs text-slate-500 text-center mt-1 max-w-[100px]">Historical transactions per SKU</div>
+        </div>
+
+        <!-- arrow -->
+        <div class="hidden lg:flex flex-col items-center px-2 flex-shrink-0">
+          <svg width="48" height="16" viewBox="0 0 48 16"><defs><linearGradient id="ag1" x1="0" x2="1"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#2dd4bf"/></linearGradient></defs><path d="M0 8 H38 M38 8 L30 3 M38 8 L30 13" stroke="url(#ag1)" stroke-width="2" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="lg:hidden pipeline-arrow my-1"></div>
+
+        <!-- 2 -->
+        <div class="flex flex-col items-center flex-1">
+          <div class="w-16 h-16 rounded-2xl glass-light flex items-center justify-center text-2xl mb-3 lift glow-ring">⚙️</div>
+          <div class="text-sm font-semibold text-center">Data Processing</div>
+          <div class="text-xs text-slate-500 text-center mt-1 max-w-[100px]">Clean, resample & classify velocity</div>
+        </div>
+
+        <div class="hidden lg:flex flex-col items-center px-2 flex-shrink-0">
+          <svg width="48" height="16" viewBox="0 0 48 16"><path d="M0 8 H38 M38 8 L30 3 M38 8 L30 13" stroke="url(#ag1)" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        </div>
+        <div class="lg:hidden pipeline-arrow my-1"></div>
+
+        <!-- 3 -->
+        <div class="flex flex-col items-center flex-1">
+          <div class="w-16 h-16 rounded-2xl glass-light flex items-center justify-center text-2xl mb-3 lift glow-ring">🧠</div>
+          <div class="text-sm font-semibold text-center">Forecast Engine</div>
+          <div class="text-xs text-slate-500 text-center mt-1 max-w-[100px]">EMA + SARIMA + ML ensemble</div>
+        </div>
+
+        <div class="hidden lg:flex flex-col items-center px-2 flex-shrink-0">
+          <svg width="48" height="16" viewBox="0 0 48 16"><path d="M0 8 H38 M38 8 L30 3 M38 8 L30 13" stroke="url(#ag1)" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        </div>
+        <div class="lg:hidden pipeline-arrow my-1"></div>
+
+        <!-- 4 -->
+        <div class="flex flex-col items-center flex-1">
+          <div class="w-16 h-16 rounded-2xl glass-light flex items-center justify-center text-2xl mb-3 lift glow-ring">📈</div>
+          <div class="text-sm font-semibold text-center">Prediction Output</div>
+          <div class="text-xs text-slate-500 text-center mt-1 max-w-[100px]">Quantity per SKU per day</div>
+        </div>
+
+        <div class="hidden lg:flex flex-col items-center px-2 flex-shrink-0">
+          <svg width="48" height="16" viewBox="0 0 48 16"><path d="M0 8 H38 M38 8 L30 3 M38 8 L30 13" stroke="url(#ag1)" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+        </div>
+        <div class="lg:hidden pipeline-arrow my-1"></div>
+
+        <!-- 5 -->
+        <div class="flex flex-col items-center flex-1">
+          <div class="w-16 h-16 rounded-2xl glass-light flex items-center justify-center text-2xl mb-3 lift glow-ring">📦</div>
+          <div class="text-sm font-semibold text-center">Inventory Decision</div>
+          <div class="text-xs text-slate-500 text-center mt-1 max-w-[100px]">Reorder recommendations</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- three architecture cards -->
+    <div class="grid sm:grid-cols-3 gap-6 mt-20 reveal">
+      <div class="glass rounded-2xl p-6 lift">
+        <div class="text-3xl mb-4">🔄</div>
+        <h3 class="font-bold text-lg mb-2">Self-Learning</h3>
+        <p class="text-slate-400 text-sm leading-relaxed">The engine compares yesterday's forecast to actual sales and automatically adjusts its predictions. It gets smarter every single day.</p>
+      </div>
+      <div class="glass rounded-2xl p-6 lift">
+        <div class="text-3xl mb-4">🛡️</div>
+        <h3 class="font-bold text-lg mb-2">Business-Safe</h3>
+        <p class="text-slate-400 text-sm leading-relaxed">Hard quantity caps, velocity guards, and zero-sales detection prevent catastrophic over- or under-ordering. No runaway forecasts.</p>
+      </div>
+      <div class="glass rounded-2xl p-6 lift">
+        <div class="text-3xl mb-4">📅</div>
+        <h3 class="font-bold text-lg mb-2">Event-Aware</h3>
+        <p class="text-slate-400 text-sm leading-relaxed">Holidays, promotions, Ramadan, Eid, and business closures all automatically adjust the forecast multipliers.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     DATA PIPELINE
+═══════════════════════════════════════════════════════════════ -->
+<section id="pipeline" class="py-24 px-6 relative overflow-hidden">
+  <!-- subtle grid bg -->
+  <div class="absolute inset-0 opacity-5" style="background-image:linear-gradient(rgba(99,102,241,.5) 1px,transparent 1px),linear-gradient(90deg,rgba(99,102,241,.5) 1px,transparent 1px);background-size:48px 48px;"></div>
+
+  <div class="max-w-6xl mx-auto relative z-10">
+    <div class="text-center mb-16 reveal">
+      <div class="text-teal-400 text-sm font-semibold uppercase tracking-widest mb-3">Data Pipeline</div>
+      <h2 class="text-3xl sm:text-5xl font-bold mb-4">What Data Feeds the Brain?</h2>
+      <p class="text-slate-400 max-w-xl mx-auto">The system reads from several database tables every run and combines them into a rich per-SKU picture.</p>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-12 items-center">
+
+      <!-- left: data sources grid -->
+      <div class="grid sm:grid-cols-2 gap-4 reveal">
+        <div class="glass rounded-2xl p-5 lift border-l-4 border-brand-500">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="text-xl">📊</span>
+            <span class="font-semibold text-sm">Historical Sales</span>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">Up to 180 days of daily unit sales per product, sourced from <code class="text-brand-300 text-[11px]">sales</code> & <code class="text-brand-300 text-[11px]">sale_details</code> tables.</p>
+        </div>
+
+        <div class="glass rounded-2xl p-5 lift border-l-4 border-teal-500">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="text-xl">🧬</span>
+            <span class="font-semibold text-sm">AI Memory</span>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">Each SKU's stored EMA level, bias correction, velocity class, and last sale date from <code class="text-teal-300 text-[11px]">forecast_models</code>.</p>
+        </div>
+
+        <div class="glass rounded-2xl p-5 lift border-l-4 border-purple-500">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="text-xl">📅</span>
+            <span class="font-semibold text-sm">Calendar Events</span>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">Holidays, promotions, paydays, Ramadan, Eid, and business closures with their demand multipliers.</p>
+        </div>
+
+        <div class="glass rounded-2xl p-5 lift border-l-4 border-amber-500">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="text-xl">📐</span>
+            <span class="font-semibold text-sm">SARIMA Parameters</span>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">Pre-trained ARIMA orders per SKU so the model doesn't re-search from scratch on every run.</p>
+        </div>
+
+        <div class="glass rounded-2xl p-5 lift border-l-4 border-rose-500 sm:col-span-2">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="text-xl">⚡</span>
+            <span class="font-semibold text-sm">Yesterday's Forecasts</span>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">All of yesterday's predicted quantities fetched in a single batch query — used to compute how accurate the last prediction was, so the system can self-correct (bias learning).</p>
+        </div>
+      </div>
+
+      <!-- right: animated pipeline flow -->
+      <div class="reveal">
+        <div class="glass rounded-3xl p-8 relative overflow-hidden">
+          <div class="text-xs text-slate-500 font-semibold uppercase tracking-widest mb-6">Live Data Flow</div>
+
+          <div class="flex flex-col gap-0">
+            <!-- each stage -->
+            <div id="pipe1" class="flex items-center gap-4 p-4 rounded-xl mb-1 transition-all duration-500 bg-brand-900/40 border border-brand-500/30">
+              <div class="w-10 h-10 rounded-xl bg-brand-500/20 flex items-center justify-center text-lg flex-shrink-0">🗄️</div>
+              <div>
+                <div class="text-sm font-semibold">MySQL Database</div>
+                <div class="text-xs text-slate-400">sales, forecast_models, events</div>
+              </div>
+              <div class="ml-auto">
+                <div class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+              </div>
+            </div>
+
+            <!-- animated connector -->
+            <div class="relative w-0.5 h-8 bg-gradient-to-b from-brand-500 to-teal-500 mx-8 overflow-hidden">
+              <div class="dot-travel" style="animation-delay:.1s"></div>
+            </div>
+
+            <div id="pipe2" class="flex items-center gap-4 p-4 rounded-xl mb-1 transition-all duration-500 bg-teal-900/30 border border-teal-500/20">
+              <div class="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center text-lg flex-shrink-0">🔧</div>
+              <div>
+                <div class="text-sm font-semibold">Data Processing</div>
+                <div class="text-xs text-slate-400">Resample to daily, fill gaps, classify velocity</div>
+              </div>
+            </div>
+
+            <div class="relative w-0.5 h-8 bg-gradient-to-b from-teal-500 to-purple-500 mx-8 overflow-hidden">
+              <div class="dot-travel" style="animation-delay:.4s;background:#14b8a6"></div>
+            </div>
+
+            <div id="pipe3" class="flex items-center gap-4 p-4 rounded-xl mb-1 transition-all duration-500 bg-purple-900/30 border border-purple-500/20">
+              <div class="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-lg flex-shrink-0">🧠</div>
+              <div>
+                <div class="text-sm font-semibold">Forecast Engine</div>
+                <div class="text-xs text-slate-400">EMA → SARIMA → ML → Blend → Caps</div>
+              </div>
+            </div>
+
+            <div class="relative w-0.5 h-8 bg-gradient-to-b from-purple-500 to-amber-500 mx-8 overflow-hidden">
+              <div class="dot-travel" style="animation-delay:.7s;background:#a855f7"></div>
+            </div>
+
+            <div id="pipe4" class="flex items-center gap-4 p-4 rounded-xl transition-all duration-500 bg-amber-900/30 border border-amber-500/20">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-lg flex-shrink-0">💾</div>
+              <div>
+                <div class="text-sm font-semibold">Write Results</div>
+                <div class="text-xs text-slate-400">Upsert forecasts + updated AI memory</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- decorative glow -->
+          <div class="absolute -bottom-8 -right-8 w-32 h-32 bg-brand-600 rounded-full opacity-10 blur-2xl"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     EMA — WHAT IT IS
+═══════════════════════════════════════════════════════════════ -->
+<section id="ema" class="py-24 px-6 relative overflow-hidden">
+  <div class="absolute inset-0 bg-gradient-to-br from-teal-900/20 to-transparent pointer-events-none"></div>
+
+  <div class="max-w-6xl mx-auto relative z-10">
+    <div class="text-center mb-16 reveal">
+      <div class="text-teal-400 text-sm font-semibold uppercase tracking-widest mb-3">Short-Term Memory</div>
+      <h2 class="text-3xl sm:text-5xl font-bold mb-4">What is EMA?</h2>
+      <p class="text-slate-400 max-w-2xl mx-auto">
+        <strong class="text-white">EMA — Exponential Moving Average</strong> — is the engine's short-term memory of how much a product typically sells per day.
+        It's the single most important number in the baseline forecast.
+      </p>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-12 items-start">
+
+      <!-- left: plain-English explanation -->
+      <div class="reveal space-y-6">
+
+        <div class="glass rounded-2xl p-6 lift border-l-4 border-teal-500">
+          <h3 class="font-bold text-lg mb-3 flex items-center gap-2">🧠 The Simple Idea</h3>
+          <p class="text-slate-300 text-sm leading-relaxed">
+            Imagine you sell a medicine every day. Instead of using the raw sales number from just yesterday (too noisy) or a plain average of the last 6 months (too slow to react), the EMA finds a <strong class="text-white">middle ground</strong>:
+          </p>
+          <ul class="mt-4 space-y-2 text-sm text-slate-400">
+            <li class="flex items-start gap-2"><span class="text-teal-400 mt-0.5">→</span> Recent days matter <strong class="text-white">more</strong></li>
+            <li class="flex items-start gap-2"><span class="text-teal-400 mt-0.5">→</span> Older days matter <strong class="text-white">less</strong> (they fade out gradually)</li>
+            <li class="flex items-start gap-2"><span class="text-teal-400 mt-0.5">→</span> A single freak day (e.g. a huge bulk purchase) doesn't break the forecast</li>
+          </ul>
+        </div>
+
+        <div class="glass rounded-2xl p-6 lift">
+          <h3 class="font-bold text-lg mb-4 flex items-center gap-2">📐 The Formula</h3>
+          <div class="glass-light rounded-xl p-5 text-center font-mono mb-4">
+            <div class="text-xl text-teal-300 font-bold">EMA<sub class="text-sm">today</sub> = α × Sales<sub class="text-sm">today</sub> + (1−α) × EMA<sub class="text-sm">yesterday</sub></div>
+          </div>
+          <div class="space-y-3 text-sm">
+            <div class="flex items-start gap-3">
+              <span class="sarima-badge vel-fast flex-shrink-0">α = 0.30</span>
+              <span class="text-slate-400">30% weight goes to <em>today's</em> actual sales — recent reality matters.</span>
+            </div>
+            <div class="flex items-start gap-3">
+              <span class="sarima-badge vel-medium flex-shrink-0">(1−α) = 0.70</span>
+              <span class="text-slate-400">70% weight stays with <em>yesterday's</em> EMA — preserving accumulated memory.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass rounded-2xl p-6 lift border border-amber-500/20">
+          <h3 class="font-bold mb-3 flex items-center gap-2">⚡ Spike Guard</h3>
+          <p class="text-sm text-slate-400 leading-relaxed">
+            If today's sales are more than <strong class="text-white">1.8×</strong> the previous EMA (a suspected data glitch or bulk order), the system caps the input at <strong class="text-white">1.4×</strong> before updating. This prevents one abnormal day from corrupting weeks of learned memory.
+          </p>
+        </div>
+      </div>
+
+      <!-- right: step-by-step numerical example + EMA chart -->
+      <div class="reveal">
+
+        <h3 class="font-bold text-xl mb-5 flex items-center gap-2">
+          <span class="w-8 h-8 rounded-lg bg-teal-500/20 flex items-center justify-center text-sm">🔢</span>
+          Worked Example — Day by Day
+        </h3>
+
+        <div class="glass rounded-2xl p-5 mb-5 overflow-x-auto">
+          <table class="w-full text-sm param-table min-w-[360px]">
+            <thead>
+              <tr class="text-left border-b border-white/5">
+                <th class="pb-3">Day</th>
+                <th class="pb-3">Actual Sales</th>
+                <th class="pb-3">Calculation</th>
+                <th class="pb-3 text-teal-400">EMA</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-white/5">
+              <tr><td class="py-2.5 text-slate-400">Day 1</td><td class="font-semibold">22</td><td class="text-xs text-slate-500">Cold start → use 7-day mean</td><td class="font-bold text-teal-300">22.0</td></tr>
+              <tr><td class="py-2.5 text-slate-400">Day 2</td><td class="font-semibold">28</td><td class="text-xs text-slate-500">0.3×28 + 0.7×22.0</td><td class="font-bold text-teal-300">23.8</td></tr>
+              <tr><td class="py-2.5 text-slate-400">Day 3</td><td class="font-semibold">15</td><td class="text-xs text-slate-500">0.3×15 + 0.7×23.8</td><td class="font-bold text-teal-300">21.2</td></tr>
+              <tr><td class="py-2.5 text-slate-400">Day 4</td><td class="font-semibold">25</td><td class="text-xs text-slate-500">0.3×25 + 0.7×21.2</td><td class="font-bold text-teal-300">22.3</td></tr>
+              <tr><td class="py-2.5 text-slate-400">Day 5</td><td class="font-semibold">90 🚨</td><td class="text-xs text-amber-500">Spike! capped to 1.4×22.3=31.3</td><td class="font-bold text-amber-300">25.0</td></tr>
+              <tr class="bg-teal-900/10"><td class="py-2.5 text-slate-400">Day 6</td><td class="font-semibold">24</td><td class="text-xs text-slate-500">0.3×24 + 0.7×25.0</td><td class="font-bold text-teal-300">24.7</td></tr>
+            </tbody>
+          </table>
+          <p class="text-xs text-slate-500 mt-3">Notice Day 5: even though 90 units sold, EMA only moves to 25 — protecting the forecast from a data spike.</p>
+        </div>
+
+        <div class="glass rounded-2xl p-5">
+          <div class="text-xs text-slate-400 font-semibold mb-3">EMA vs Raw Sales — Smoothing Effect</div>
+          <div style="height:200px"><canvas id="emaChart"></canvas></div>
+          <div class="flex gap-4 mt-3 justify-center text-xs">
+            <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-full bg-slate-400"></div><span class="text-slate-400">Raw Daily Sales</span></div>
+            <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded-full bg-teal-400"></div><span class="text-slate-400">EMA (smoothed)</span></div>
+          </div>
+        </div>
+
+        <!-- how EMA feeds baseline -->
+        <div class="glass-light rounded-2xl p-5 mt-5 border border-teal-500/20 text-sm">
+          <div class="text-xs text-teal-400 font-semibold uppercase tracking-widest mb-3">How EMA Becomes a Forecast</div>
+          <div class="font-mono text-center text-base text-white mb-3">
+            Baseline = EMA × Bias × EventMultiplier
+          </div>
+          <div class="grid grid-cols-3 gap-3 text-center text-xs text-slate-400">
+            <div><strong class="text-teal-300 block text-sm">EMA</strong>Short-term demand memory</div>
+            <div><strong class="text-brand-300 block text-sm">Bias</strong>Self-correction for past errors</div>
+            <div><strong class="text-amber-300 block text-sm">Event ×</strong>Holiday / promo uplift</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     VELOCITY CLASSIFICATION
+═══════════════════════════════════════════════════════════════ -->
+<section class="py-24 px-6">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-16 reveal">
+      <div class="text-purple-400 text-sm font-semibold uppercase tracking-widest mb-3">Velocity Intelligence</div>
+      <h2 class="text-3xl sm:text-5xl font-bold mb-4">Every SKU Gets a Behaviour Label</h2>
+      <p class="text-slate-400 max-w-xl mx-auto">Before any model runs, the system classifies each product's recent sales speed. This label controls which models activate and how aggressive the predictions are.</p>
+    </div>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 reveal">
+
+      <div class="glass rounded-2xl p-6 lift border-t-4 border-red-500">
+        <div class="flex items-center justify-between mb-4">
+          <span class="vel-dead sarima-badge">💀 Dead</span>
+          <span class="text-slate-500 text-xs">0 sales</span>
+        </div>
+        <p class="text-sm text-slate-400 mb-4 leading-relaxed">No meaningful demand in last 15 days, or inactive for 7+ days. Forecast output: <strong class="text-white">0 units</strong>.</p>
+        <div class="text-xs text-slate-500">Models active: <span class="text-red-400 font-semibold">None</span></div>
+      </div>
+
+      <div class="glass rounded-2xl p-6 lift border-t-4 border-amber-500">
+        <div class="flex items-center justify-between mb-4">
+          <span class="vel-slow sarima-badge">🐢 Slow</span>
+          <span class="text-slate-500 text-xs">&lt; 0.5/day</span>
+        </div>
+        <p class="text-sm text-slate-400 mb-4 leading-relaxed">Rare, sporadic demand. The system uses only the simple EMA baseline — statistically noisy enough to skip complex models.</p>
+        <div class="text-xs text-slate-500">Models active: <span class="text-amber-400 font-semibold">EMA only</span></div>
+      </div>
+
+      <div class="glass rounded-2xl p-6 lift border-t-4 border-blue-500">
+        <div class="flex items-center justify-between mb-4">
+          <span class="vel-medium sarima-badge">🚶 Medium</span>
+          <span class="text-slate-500 text-xs">0.5–3/day</span>
+        </div>
+        <p class="text-sm text-slate-400 mb-4 leading-relaxed">Consistent, regular sellers. SARIMA activates to learn weekly patterns and trends. Blended 65% baseline / 35% SARIMA.</p>
+        <div class="text-xs text-slate-500">Models active: <span class="text-blue-400 font-semibold">EMA + SARIMA</span></div>
+      </div>
+
+      <div class="glass rounded-2xl p-6 lift border-t-4 border-green-500">
+        <div class="flex items-center justify-between mb-4">
+          <span class="vel-fast sarima-badge">🚀 Fast</span>
+          <span class="text-slate-500 text-xs">≥ 3/day</span>
+        </div>
+        <p class="text-sm text-slate-400 mb-4 leading-relaxed">High-volume, high-confidence SKUs. All three layers run. Blended 35% baseline / 45% SARIMA / 20% ML.</p>
+        <div class="text-xs text-slate-500">Models active: <span class="text-green-400 font-semibold">EMA + SARIMA + ML</span></div>
+      </div>
+    </div>
+
+    <!-- safety guards -->
+    <div class="mt-8 glass rounded-2xl p-6 reveal">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="text-xl">🛡️</span>
+        <span class="font-semibold">Override Safety Guards</span>
+        <span class="text-xs text-slate-500 ml-auto">Applied after classification</span>
+      </div>
+      <div class="grid sm:grid-cols-3 gap-4 text-sm">
+        <div class="flex items-start gap-3">
+          <div class="w-2 h-2 rounded-full bg-red-400 mt-1.5 flex-shrink-0"></div>
+          <div><strong class="text-white">Zero-Sales Guard</strong><br/><span class="text-slate-400 text-xs">If last 7 days = 0 units, velocity is capped at Slow, blocking SARIMA/ML.</span></div>
+        </div>
+        <div class="flex items-start gap-3">
+          <div class="w-2 h-2 rounded-full bg-amber-400 mt-1.5 flex-shrink-0"></div>
+          <div><strong class="text-white">Demand Collapse Guard</strong><br/><span class="text-slate-400 text-xs">Last 7-day average &lt; 50% of the prior 14-day average → forced Slow + EMA reset.</span></div>
+        </div>
+        <div class="flex items-start gap-3">
+          <div class="w-2 h-2 rounded-full bg-rose-400 mt-1.5 flex-shrink-0"></div>
+          <div><strong class="text-white">Inactivity Guard</strong><br/><span class="text-slate-400 text-xs">If stored last-sale-date is 7+ days ago, velocity overridden to Dead regardless.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     SARIMA EXPLANATION
+═══════════════════════════════════════════════════════════════ -->
+<section id="sarima" class="py-24 px-6 relative overflow-hidden">
+  <div class="absolute inset-0 bg-gradient-to-br from-brand-900/30 to-transparent pointer-events-none"></div>
+
+  <div class="max-w-6xl mx-auto relative z-10">
+    <div class="text-center mb-16 reveal">
+      <div class="text-brand-400 text-sm font-semibold uppercase tracking-widest mb-3">Statistical Intelligence</div>
+      <h2 class="text-3xl sm:text-5xl font-bold mb-4">How SARIMA Works</h2>
+      <p class="text-slate-400 max-w-2xl mx-auto">
+        SARIMA is a statistical model that studies the <em>shape</em> of past sales — cycles, rises, falls — and projects that shape into the future. Think of it as a very experienced analyst who spots patterns in spreadsheets.
+      </p>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-12 items-start">
+
+      <!-- left: parameter breakdown -->
+      <div class="reveal">
+        <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+          <span class="w-8 h-8 rounded-lg bg-brand-500/20 flex items-center justify-center text-sm">📐</span>
+          SARIMA Parameters Explained
+        </h3>
+
+        <!-- formula display -->
+        <div class="glass rounded-2xl p-5 mb-6 text-center glow-ring">
+          <div class="text-2xl font-mono font-bold gradient-text mb-2">SARIMA(p, d, q)(P, D, Q, s)</div>
+          <div class="text-xs text-slate-500">s = 7 (weekly seasonality)</div>
+        </div>
+
+        <div class="space-y-3 param-table">
+          <div class="glass rounded-xl p-4 flex items-start gap-4 lift">
+            <div class="w-10 h-10 rounded-lg bg-brand-500/20 flex items-center justify-center font-mono font-bold text-brand-300 flex-shrink-0">p</div>
+            <div>
+              <div class="font-semibold text-sm">Past Sales Influence</div>
+              <div class="text-xs text-slate-400 mt-1">How many previous days' sales directly influence today's prediction. If p=2, yesterday and the day before both matter.</div>
+            </div>
+          </div>
+          <div class="glass rounded-xl p-4 flex items-start gap-4 lift">
+            <div class="w-10 h-10 rounded-lg bg-teal-500/20 flex items-center justify-center font-mono font-bold text-teal-300 flex-shrink-0">d</div>
+            <div>
+              <div class="font-semibold text-sm">Trend Removal</div>
+              <div class="text-xs text-slate-400 mt-1">How many times the data is "differenced" to remove long-term trends, so the model focuses on the fluctuations.</div>
+            </div>
+          </div>
+          <div class="glass rounded-xl p-4 flex items-start gap-4 lift">
+            <div class="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center font-mono font-bold text-purple-300 flex-shrink-0">q</div>
+            <div>
+              <div class="font-semibold text-sm">Error Smoothing</div>
+              <div class="text-xs text-slate-400 mt-1">Uses past prediction errors to improve future predictions. Helps the model self-correct from its own mistakes.</div>
+            </div>
+          </div>
+          <div class="glass rounded-xl p-4 flex items-start gap-4 lift border border-brand-500/20">
+            <div class="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center font-mono font-bold text-amber-300 flex-shrink-0">s</div>
+            <div>
+              <div class="font-semibold text-sm">Seasonal Period = 7</div>
+              <div class="text-xs text-slate-400 mt-1">Tells the model that sales repeat in weekly cycles. Mondays look like last Monday; Fridays look like last Friday.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- right: visual example + what it detects -->
+      <div class="reveal">
+        <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+          <span class="w-8 h-8 rounded-lg bg-teal-500/20 flex items-center justify-center text-sm">🔍</span>
+          What SARIMA Detects
+        </h3>
+
+        <div class="space-y-4 mb-8">
+          <div class="glass rounded-xl p-4 flex gap-4 lift">
+            <span class="text-2xl">📈</span>
+            <div>
+              <div class="font-semibold text-sm mb-1">Trends</div>
+              <div class="text-xs text-slate-400">If a medicine is steadily gaining popularity month over month, SARIMA captures this upward trajectory.</div>
+            </div>
+          </div>
+          <div class="glass rounded-xl p-4 flex gap-4 lift">
+            <span class="text-2xl">🔁</span>
+            <div>
+              <div class="font-semibold text-sm mb-1">Seasonality</div>
+              <div class="text-xs text-slate-400">Winter cold medicines spike every year. SARIMA remembers these recurring patterns and applies them to the forecast.</div>
+            </div>
+          </div>
+          <div class="glass rounded-xl p-4 flex gap-4 lift">
+            <span class="text-2xl">📅</span>
+            <div>
+              <div class="font-semibold text-sm mb-1">Weekly Cycles</div>
+              <div class="text-xs text-slate-400">Pharmacies sell more on certain weekdays. SARIMA's s=7 setting means it always "remembers" what day of the week it is.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- example box -->
+        <div class="glass-light rounded-2xl p-5 border border-teal-500/20">
+          <div class="text-xs text-teal-400 font-semibold uppercase tracking-widest mb-3">Real Example</div>
+          <p class="text-sm text-slate-300 leading-relaxed">
+            If <strong>Napa Extra 500mg</strong> consistently sells 30 units every Friday (payday effect) but only 15 units on Sundays, SARIMA will automatically forecast higher quantities for upcoming Fridays — without any human configuration required.
+          </p>
+        </div>
+
+        <!-- eligibility note -->
+        <div class="mt-4 flex items-start gap-3 text-xs text-slate-500 glass rounded-xl p-4">
+          <span class="text-amber-400 text-base flex-shrink-0">⚠️</span>
+          <span>SARIMA only activates when a SKU has <strong class="text-slate-300">at least 21 days</strong> of history and is classified as <strong class="text-slate-300">medium or fast</strong>. For newer products, the system relies on the EMA baseline.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     MACHINE LEARNING LAYER
+═══════════════════════════════════════════════════════════════ -->
+<section id="ml" class="py-24 px-6">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-16 reveal">
+      <div class="text-teal-400 text-sm font-semibold uppercase tracking-widest mb-3">Machine Learning Layer</div>
+      <h2 class="text-3xl sm:text-5xl font-bold mb-4">The AI Correction Layer</h2>
+      <p class="text-slate-400 max-w-2xl mx-auto">SARIMA knows patterns from the past. ML goes further — it learns complex relationships between many signals that no single formula can capture. It acts as a smart correction on top of the statistical forecast.</p>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-6 mb-12 reveal">
+      <div class="glass rounded-2xl p-6 lift border-t-4 border-teal-500">
+        <div class="text-3xl mb-4">🎯</div>
+        <h3 class="font-bold mb-2">Step 1 — Will It Sell?</h3>
+        <p class="text-sm text-slate-400 leading-relaxed">A <strong class="text-white">classifier model</strong> first asks: "Will this product sell at all on this day?" It outputs a probability score (0–100%). If the probability is below the threshold, the forecast is set to zero — preventing phantom orders.</p>
+        <div class="mt-4 text-xs text-slate-500 glass rounded-lg p-3">
+          <strong class="text-teal-400">Threshold:</strong> 35% probability. Below this = no sale predicted.
+        </div>
+      </div>
+
+      <div class="glass rounded-2xl p-6 lift border-t-4 border-brand-500">
+        <div class="text-3xl mb-4">🔢</div>
+        <h3 class="font-bold mb-2">Step 2 — How Much?</h3>
+        <p class="text-sm text-slate-400 leading-relaxed">If the classifier says "yes, it will sell", a <strong class="text-white">regressor model</strong> then predicts the exact quantity. It considers weekday patterns, recent lag features, seasonality signals, and event relationships simultaneously.</p>
+        <div class="mt-4 text-xs text-slate-500 glass rounded-lg p-3">
+          <strong class="text-brand-400">Minimum history:</strong> 30 days required before ML activates.
+        </div>
+      </div>
+
+      <div class="glass rounded-2xl p-6 lift border-t-4 border-purple-500">
+        <div class="text-3xl mb-4">⚡</div>
+        <h3 class="font-bold mb-2">Step 3 — Blend with Others</h3>
+        <p class="text-sm text-slate-400 leading-relaxed">For fast-moving SKUs, ML contributes <strong class="text-white">20%</strong> of the final forecast. SARIMA contributes 45% and the EMA baseline 35%. This blend prevents any single model from dominating when it might be wrong.</p>
+        <div class="mt-4 text-xs text-slate-500 glass rounded-lg p-3">
+          <strong class="text-purple-400">Only for:</strong> Fast-velocity SKUs (≥ 3 units/day average).
+        </div>
+      </div>
+    </div>
+
+    <!-- what ML detects -->
+    <div class="glass rounded-3xl p-8 reveal">
+      <h3 class="font-bold text-xl mb-6 text-center">What ML Detects That Rules Cannot</h3>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="text-center p-4">
+          <div class="text-3xl mb-2">📊</div>
+          <div class="font-semibold text-sm mb-1">Demand Spikes</div>
+          <div class="text-xs text-slate-400">Sudden surge in demand that breaks the usual pattern — like a disease outbreak or a major promotion.</div>
+        </div>
+        <div class="text-center p-4">
+          <div class="text-3xl mb-2">📉</div>
+          <div class="font-semibold text-sm mb-1">Declining Products</div>
+          <div class="text-xs text-slate-400">Products being phased out or replaced by alternatives — steady decline that SARIMA might over-estimate.</div>
+        </div>
+        <div class="text-center p-4">
+          <div class="text-3xl mb-2">🔀</div>
+          <div class="font-semibold text-sm mb-1">Complex Interactions</div>
+          <div class="text-xs text-slate-400">Payday + weekend + post-holiday all happening simultaneously — non-linear combinations a formula misses.</div>
+        </div>
+        <div class="text-center p-4">
+          <div class="text-3xl mb-2">🆕</div>
+          <div class="font-semibold text-sm mb-1">New Growth</div>
+          <div class="text-xs text-slate-400">Products gaining momentum — where historical averages understate future demand and the trend is accelerating.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     BIAS LEARNING / SELF-CORRECTION
+═══════════════════════════════════════════════════════════════ -->
+<section class="py-24 px-6 relative overflow-hidden">
+  <div class="absolute inset-0 bg-gradient-to-br from-amber-900/10 to-transparent pointer-events-none"></div>
+  <div class="max-w-5xl mx-auto relative z-10">
+    <div class="text-center mb-12 reveal">
+      <div class="text-amber-400 text-sm font-semibold uppercase tracking-widest mb-3">Self-Learning</div>
+      <h2 class="text-3xl sm:text-4xl font-bold mb-4">The System Learns From Its Own Mistakes</h2>
+      <p class="text-slate-400 max-w-xl mx-auto">Each morning, before generating today's forecast, the engine compares what it predicted yesterday against what actually sold. It then adjusts a per-SKU <em>bias factor</em> to correct for systematic errors.</p>
+    </div>
+
+    <!-- bias learning flow -->
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-4 reveal">
+      <div class="glass rounded-2xl p-5 text-center w-44 lift">
+        <div class="text-3xl mb-2">🔮</div>
+        <div class="text-xs text-slate-400">Yesterday's Forecast</div>
+        <div class="text-xl font-bold text-brand-300 mt-1">45 units</div>
+      </div>
+      <div class="text-brand-400 text-2xl">→</div>
+      <div class="glass rounded-2xl p-5 text-center w-44 lift">
+        <div class="text-3xl mb-2">📦</div>
+        <div class="text-xs text-slate-400">Actual Sales</div>
+        <div class="text-xl font-bold text-teal-300 mt-1">52 units</div>
+      </div>
+      <div class="text-brand-400 text-2xl">→</div>
+      <div class="glass rounded-2xl p-5 text-center w-44 lift">
+        <div class="text-3xl mb-2">⚖️</div>
+        <div class="text-xs text-slate-400">Error Ratio</div>
+        <div class="text-xl font-bold text-amber-300 mt-1">+15.6%</div>
+      </div>
+      <div class="text-brand-400 text-2xl">→</div>
+      <div class="glass rounded-2xl p-5 text-center w-44 lift border border-green-500/30">
+        <div class="text-3xl mb-2">🎯</div>
+        <div class="text-xs text-slate-400">Bias Adjusted</div>
+        <div class="text-xl font-bold text-green-300 mt-1">1.04 → 1.06</div>
+      </div>
+    </div>
+
+    <div class="glass rounded-2xl p-6 mt-8 reveal">
+      <div class="grid sm:grid-cols-3 gap-6 text-center text-sm">
+        <div>
+          <div class="text-brand-300 font-mono text-lg font-bold mb-1">ALPHA = 0.30</div>
+          <div class="text-xs text-slate-400">EMA learning rate — how fast the demand memory reacts to new daily sales</div>
+        </div>
+        <div>
+          <div class="text-amber-300 font-mono text-lg font-bold mb-1">BIAS_LR = 0.10</div>
+          <div class="text-xs text-slate-400">Bias correction speed — how quickly systematic over/under-forecasting is fixed</div>
+        </div>
+        <div>
+          <div class="text-teal-300 font-mono text-lg font-bold mb-1">EVENT_LR = 0.05</div>
+          <div class="text-xs text-slate-400">Holiday learning speed — how fast Eid/Ramadan uplift factors improve year-over-year</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     REAL PRODUCT EXAMPLE
+═══════════════════════════════════════════════════════════════ -->
+<section id="example" class="py-24 px-6">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-16 reveal">
+      <div class="text-green-400 text-sm font-semibold uppercase tracking-widest mb-3">Real-World Example</div>
+      <h2 class="text-3xl sm:text-5xl font-bold mb-4">Walk-Through: Napa Extra 500mg</h2>
+      <p class="text-slate-400 max-w-xl mx-auto">Let's trace exactly what happens when the engine forecasts one product.</p>
+    </div>
+
+    <div class="grid lg:grid-cols-2 gap-12 items-start">
+
+      <!-- left: step-by-step -->
+      <div class="reveal space-y-4">
+
+        <div class="glass rounded-2xl p-5 lift border-l-4 border-brand-500">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-7 h-7 rounded-full bg-brand-500 flex items-center justify-center text-xs font-bold flex-shrink-0">1</div>
+            <span class="font-semibold">Load Sales History</span>
+          </div>
+          <div class="grid grid-cols-4 gap-2 text-center">
+            <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">Day 1</div><div class="font-bold text-brand-300">22</div></div>
+            <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">Day 2</div><div class="font-bold text-brand-300">25</div></div>
+            <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">Day 3</div><div class="font-bold text-brand-300">24</div></div>
+            <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">Day 4</div><div class="font-bold text-brand-300">27</div></div>
+          </div>
+          <div class="text-xs text-slate-400 mt-3">Average: 24.5 units/day → classified <span class="vel-fast sarima-badge ml-1">🚀 Fast</span></div>
+        </div>
+
+        <div class="step-line opacity-30"></div>
+
+        <div class="glass rounded-2xl p-5 lift border-l-4 border-teal-500">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-7 h-7 rounded-full bg-teal-500 flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>
+            <span class="font-semibold">EMA Baseline Computed</span>
+          </div>
+          <p class="text-sm text-slate-400">EMA = 0.30 × 27 + 0.70 × 23.8 = <strong class="text-white">24.8 units</strong></p>
+          <p class="text-xs text-slate-500 mt-2">Yesterday's actual was higher (27) so EMA nudges upward. Bias factor = 1.02 (slightly under-forecasting historically).</p>
+        </div>
+
+        <div class="step-line opacity-30"></div>
+
+        <div class="glass rounded-2xl p-5 lift border-l-4 border-purple-500">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-7 h-7 rounded-full bg-purple-500 flex items-center justify-center text-xs font-bold flex-shrink-0">3</div>
+            <span class="font-semibold">SARIMA Detects Friday Spike</span>
+          </div>
+          <p class="text-sm text-slate-400">SARIMA's weekly cycle (s=7) notes that this product sells 35% more on Fridays. Forecast for next Friday: <strong class="text-white">33 units</strong>.</p>
+        </div>
+
+        <div class="step-line opacity-30"></div>
+
+        <div class="glass rounded-2xl p-5 lift border-l-4 border-amber-500">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-7 h-7 rounded-full bg-amber-500 flex items-center justify-center text-xs font-bold flex-shrink-0">4</div>
+            <span class="font-semibold">Event Calendar Check</span>
+          </div>
+          <p class="text-sm text-slate-400">Next Thursday = Payday. EventCalendar returns multiplier <strong class="text-white">1.18×</strong>. Thursday baseline 25 → <strong class="text-white">29 units</strong> adjusted.</p>
+        </div>
+
+        <div class="step-line opacity-30"></div>
+
+        <div class="glass rounded-2xl p-5 lift border-l-4 border-green-500 glow-ring">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center text-xs font-bold flex-shrink-0">5</div>
+            <span class="font-semibold">Final Forecast Output</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 text-center mb-3">
+            <div><div class="text-xs text-slate-500">5-Day Total</div><div class="font-bold text-2xl text-green-300">137</div><div class="text-xs text-slate-500">units</div></div>
+            <div><div class="text-xs text-slate-500">Recommended Order</div><div class="font-bold text-2xl text-white">160</div><div class="text-xs text-slate-500">units (+17% buffer)</div></div>
+            <div><div class="text-xs text-slate-500">Method</div><div class="font-bold text-sm text-brand-300 mt-2">blend</div><div class="text-xs text-slate-500">SARIMA 45%</div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- right: chart -->
+      <div class="reveal">
+        <div class="glass rounded-3xl p-6">
+          <div class="text-sm font-semibold mb-1">Napa Extra 500mg — Historical + 5-Day Forecast</div>
+          <div class="text-xs text-slate-500 mb-4">Actual sales (solid) vs AI prediction (dashed)</div>
+          <div class="chart-wrap">
+            <canvas id="forecastChart"></canvas>
+          </div>
+          <div class="flex gap-4 mt-4 justify-center text-xs">
+            <div class="flex items-center gap-1.5"><div class="w-4 h-0.5 bg-brand-400"></div><span class="text-slate-400">Historical Sales</span></div>
+            <div class="flex items-center gap-1.5"><div class="w-4 h-0.5 bg-teal-400 border-dashed border-t border-teal-400"></div><span class="text-slate-400">AI Forecast</span></div>
+            <div class="flex items-center gap-1.5"><div class="w-4 h-0.5 bg-amber-400 opacity-60"></div><span class="text-slate-400">Event Day</span></div>
+          </div>
+        </div>
+
+        <!-- daily breakdown table -->
+        <div class="glass rounded-2xl p-5 mt-5">
+          <div class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">5-Day Forecast Breakdown</div>
+          <table class="w-full text-sm param-table">
+            <thead><tr class="text-left border-b border-white/5 pb-2">
+              <th class="pb-2">Day</th><th class="pb-2">Date</th><th class="pb-2">Qty</th><th class="pb-2">Notes</th>
+            </tr></thead>
+            <tbody class="divide-y divide-white/5">
+              <tr class="py-2"><td class="py-2 text-slate-300">Mon</td><td class="text-slate-400">+1</td><td class="font-semibold text-white">24</td><td class="text-slate-500 text-xs">baseline</td></tr>
+              <tr class="py-2"><td class="py-2 text-slate-300">Tue</td><td class="text-slate-400">+2</td><td class="font-semibold text-white">23</td><td class="text-slate-500 text-xs">baseline</td></tr>
+              <tr class="py-2"><td class="py-2 text-slate-300">Wed</td><td class="text-slate-400">+3</td><td class="font-semibold text-white">25</td><td class="text-slate-500 text-xs">mid-week uptick</td></tr>
+              <tr class="py-2"><td class="py-2 text-slate-300">Thu</td><td class="text-slate-400">+4</td><td class="font-semibold text-amber-300">29</td><td class="text-amber-500 text-xs">💰 Payday ×1.18</td></tr>
+              <tr class="py-2"><td class="py-2 text-slate-300">Fri</td><td class="text-slate-400">+5</td><td class="font-semibold text-green-300">36</td><td class="text-green-500 text-xs">🚀 Friday peak</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     FORECAST FLOW ANIMATION
+═══════════════════════════════════════════════════════════════ -->
+<section class="py-24 px-6 relative overflow-hidden">
+  <div class="absolute inset-0 bg-gradient-to-t from-brand-900/20 to-transparent pointer-events-none"></div>
+  <div class="max-w-3xl mx-auto relative z-10">
+    <div class="text-center mb-16 reveal">
+      <div class="text-brand-400 text-sm font-semibold uppercase tracking-widest mb-3">Ensemble Pipeline</div>
+      <h2 class="text-3xl sm:text-5xl font-bold mb-4">From Raw Data to Final Number</h2>
+      <p class="text-slate-400">Every SKU passes through all six stages every day.</p>
+    </div>
+
+    <div id="flowSteps" class="space-y-2 reveal">
+
+      <div class="flow-step glass rounded-2xl p-5 flex items-center gap-5 lift opacity-0 translate-y-4 transition-all duration-500">
+        <div class="w-12 h-12 rounded-xl bg-brand-500/20 flex items-center justify-center text-xl flex-shrink-0 glow-ring">📦</div>
+        <div class="flex-1">
+          <div class="flex items-center justify-between">
+            <span class="font-semibold">1 · Sales Data Loaded</span>
+            <span class="text-xs text-slate-500 font-mono">180 days</span>
+          </div>
+          <div class="text-xs text-slate-400 mt-1">Daily aggregated quantities per SKU fetched from MySQL</div>
+        </div>
+      </div>
+
+      <div class="flow-step glass rounded-2xl p-5 flex items-center gap-5 lift opacity-0 translate-y-4 transition-all duration-500" style="transition-delay:.12s">
+        <div class="w-12 h-12 rounded-xl bg-teal-500/20 flex items-center justify-center text-xl flex-shrink-0">🔍</div>
+        <div class="flex-1">
+          <div class="flex items-center justify-between">
+            <span class="font-semibold">2 · Velocity Classified</span>
+            <span class="text-xs text-slate-500 font-mono">Last 15 days</span>
+          </div>
+          <div class="text-xs text-slate-400 mt-1">Dead / Slow / Medium / Fast label determines which models run</div>
+        </div>
+      </div>
+
+      <div class="flow-step glass rounded-2xl p-5 flex items-center gap-5 lift opacity-0 translate-y-4 transition-all duration-500" style="transition-delay:.24s">
+        <div class="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center text-xl flex-shrink-0">📊</div>
+        <div class="flex-1">
+          <div class="flex items-center justify-between">
+            <span class="font-semibold">3 · EMA Baseline Computed</span>
+            <span class="text-xs text-slate-500 font-mono">α = 0.30</span>
+          </div>
+          <div class="text-xs text-slate-400 mt-1">Short-term demand memory × bias correction × event multiplier</div>
+        </div>
+      </div>
+
+      <div class="flow-step glass rounded-2xl p-5 flex items-center gap-5 lift opacity-0 translate-y-4 transition-all duration-500" style="transition-delay:.36s">
+        <div class="w-12 h-12 rounded-xl bg-brand-500/20 flex items-center justify-center text-xl flex-shrink-0">📐</div>
+        <div class="flex-1">
+          <div class="flex items-center justify-between">
+            <span class="font-semibold">4 · SARIMA Forecast</span>
+            <span class="text-xs text-slate-500 font-mono">Medium + Fast</span>
+          </div>
+          <div class="text-xs text-slate-400 mt-1">Weekly seasonality model adds trend and cycle awareness</div>
+        </div>
+      </div>
+
+      <div class="flow-step glass rounded-2xl p-5 flex items-center gap-5 lift opacity-0 translate-y-4 transition-all duration-500" style="transition-delay:.48s">
+        <div class="w-12 h-12 rounded-xl bg-amber-500/20 flex items-center justify-center text-xl flex-shrink-0">🤖</div>
+        <div class="flex-1">
+          <div class="flex items-center justify-between">
+            <span class="font-semibold">5 · ML Adjustment</span>
+            <span class="text-xs text-slate-500 font-mono">Fast only</span>
+          </div>
+          <div class="text-xs text-slate-400 mt-1">Classifier confirms sale probability; regressor predicts quantity</div>
+        </div>
+      </div>
+
+      <div class="flow-step glass rounded-2xl p-5 flex items-center gap-5 lift opacity-0 translate-y-4 transition-all duration-500" style="transition-delay:.60s">
+        <div class="w-12 h-12 rounded-xl bg-rose-500/20 flex items-center justify-center text-xl flex-shrink-0">⚖️</div>
+        <div class="flex-1">
+          <div class="flex items-center justify-between">
+            <span class="font-semibold">6 · Weighted Blend + Safety Caps</span>
+            <span class="text-xs text-slate-500 font-mono">Hard max 500</span>
+          </div>
+          <div class="text-xs text-slate-400 mt-1">Dynamic weights normalised; quantity clipped to velocity-aware cap; closed days → 0</div>
+        </div>
+      </div>
+
+      <div class="flow-step glass rounded-2xl p-5 flex items-center gap-5 lift opacity-0 translate-y-4 transition-all duration-500 border border-green-500/30" style="transition-delay:.72s">
+        <div class="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center text-xl flex-shrink-0">✅</div>
+        <div class="flex-1">
+          <div class="flex items-center justify-between">
+            <span class="font-semibold text-green-300">Final Forecast Written to MySQL</span>
+            <span class="text-xs text-slate-500 font-mono">Upsert-safe</span>
+          </div>
+          <div class="text-xs text-slate-400 mt-1">sales_forecast + forecast_models updated; run is idempotent</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     BUSINESS IMPACT
+═══════════════════════════════════════════════════════════════ -->
+<section id="impact" class="py-24 px-6">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center mb-16 reveal">
+      <div class="text-green-400 text-sm font-semibold uppercase tracking-widest mb-3">Business Impact</div>
+      <h2 class="text-3xl sm:text-5xl font-bold mb-4">Why This Matters</h2>
+      <p class="text-slate-400 max-w-xl mx-auto">The forecast engine turns raw transaction history into strategic competitive advantage.</p>
+    </div>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-12 reveal">
+      <div class="glass rounded-2xl p-6 text-center lift hover:border-red-500/40 border border-transparent transition-all">
+        <div class="text-4xl mb-4">🚫</div>
+        <h3 class="font-bold mb-2">Prevents Stockouts</h3>
+        <p class="text-sm text-slate-400">Knowing demand in advance means purchasing before shelves run empty — keeping patients served and revenue protected.</p>
+      </div>
+      <div class="glass rounded-2xl p-6 text-center lift hover:border-amber-500/40 border border-transparent transition-all">
+        <div class="text-4xl mb-4">📉</div>
+        <h3 class="font-bold mb-2">Reduces Overstock</h3>
+        <p class="text-sm text-slate-400">Dead-SKU detection and velocity caps ensure slow-moving or expired items aren't over-ordered, freeing working capital.</p>
+      </div>
+      <div class="glass rounded-2xl p-6 text-center lift hover:border-green-500/40 border border-transparent transition-all">
+        <div class="text-4xl mb-4">💰</div>
+        <h3 class="font-bold mb-2">Improves Cash Flow</h3>
+        <p class="text-sm text-slate-400">Right-sized orders mean capital isn't locked in excess stock. Smarter buying cycles improve liquidity month-over-month.</p>
+      </div>
+      <div class="glass rounded-2xl p-6 text-center lift hover:border-blue-500/40 border border-transparent transition-all">
+        <div class="text-4xl mb-4">🎯</div>
+        <h3 class="font-bold mb-2">Smarter Purchasing</h3>
+        <p class="text-sm text-slate-400">Procurement teams receive data-driven recommendations instead of relying on experience or gut feel alone.</p>
+      </div>
+    </div>
+
+    <!-- event awareness callout -->
+    <div class="glass rounded-3xl p-8 reveal grid lg:grid-cols-2 gap-8 items-center">
+      <div>
+        <div class="text-xs text-brand-400 font-semibold uppercase tracking-widest mb-3">Event Intelligence</div>
+        <h3 class="text-2xl font-bold mb-4">Automatically Prepared for Eid, Ramadan & Promotions</h3>
+        <p class="text-slate-400 text-sm leading-relaxed mb-4">The system reads a calendar of cultural events and promotions. Demand multipliers are applied per-date per-event. After each occurrence, the system measures actual vs predicted uplift and automatically improves the multiplier for next year — without any manual reconfiguration.</p>
+        <div class="flex flex-wrap gap-2">
+          <span class="sarima-badge bg-brand-900/40 text-brand-300 border border-brand-500/30">🌙 Ramadan</span>
+          <span class="sarima-badge bg-amber-900/40 text-amber-300 border border-amber-500/30">🎉 Eid</span>
+          <span class="sarima-badge bg-teal-900/40 text-teal-300 border border-teal-500/30">💰 Payday</span>
+          <span class="sarima-badge bg-purple-900/40 text-purple-300 border border-purple-500/30">🏷️ Promotion</span>
+          <span class="sarima-badge bg-red-900/40 text-red-300 border border-red-500/30">🔒 Closure</span>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="eventChart"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     TECHNICAL STACK
+═══════════════════════════════════════════════════════════════ -->
+<section class="py-24 px-6 relative overflow-hidden">
+  <div class="absolute inset-0 bg-gradient-to-br from-slate-900 to-brand-900/20 pointer-events-none"></div>
+  <div class="max-w-6xl mx-auto relative z-10">
+    <div class="text-center mb-16 reveal">
+      <div class="text-slate-400 text-sm font-semibold uppercase tracking-widest mb-3">Technical Stack</div>
+      <h2 class="text-3xl sm:text-5xl font-bold mb-4">Built on Industry-Proven Tools</h2>
+      <p class="text-slate-400 max-w-xl mx-auto">Every component was chosen for reliability at scale in production retail environments.</p>
+    </div>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 reveal">
+
+      <div class="glass rounded-2xl p-6 lift">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-blue-500/15 flex items-center justify-center">
+            <svg viewBox="0 0 24 24" class="w-6 h-6 fill-blue-400"><path d="M14.25 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.75L14.25 2z"/></svg>
+          </div>
+          <div><div class="font-semibold">Python 3.11</div><div class="text-xs text-slate-500">Core runtime</div></div>
+        </div>
+        <p class="text-xs text-slate-400 leading-relaxed">The entire engine — data loading, modelling, and database writes — runs as a single Python process. Designed for Python 3.10 or 3.11.</p>
+      </div>
+
+      <div class="glass rounded-2xl p-6 lift">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-green-500/15 flex items-center justify-center text-lg">🐼</div>
+          <div><div class="font-semibold">Pandas</div><div class="text-xs text-slate-500">Data wrangling</div></div>
+        </div>
+        <p class="text-xs text-slate-400 leading-relaxed">All sales data is represented as time-indexed Pandas Series. Daily resampling, gap filling, and rolling windows are Pandas native operations.</p>
+      </div>
+
+      <div class="glass rounded-2xl p-6 lift">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-brand-500/15 flex items-center justify-center text-lg">📈</div>
+          <div><div class="font-semibold">statsmodels</div><div class="text-xs text-slate-500">SARIMA engine</div></div>
+        </div>
+        <p class="text-xs text-slate-400 leading-relaxed">SARIMAX from statsmodels fits the seasonal ARIMA model. pmdarima's auto_arima automatically selects the best p,d,q parameters per SKU.</p>
+      </div>
+
+      <div class="glass rounded-2xl p-6 lift">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-orange-500/15 flex items-center justify-center text-lg">🤖</div>
+          <div><div class="font-semibold">scikit-learn</div><div class="text-xs text-slate-500">ML layer</div></div>
+        </div>
+        <p class="text-xs text-slate-400 leading-relaxed">The optional ML layer uses scikit-learn compatible classifier and regressor models. Any sklearn-compatible model can be plugged in without code changes.</p>
+      </div>
+
+      <div class="glass rounded-2xl p-6 lift">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-teal-500/15 flex items-center justify-center text-lg">🗄️</div>
+          <div><div class="font-semibold">SQLAlchemy + MySQL</div><div class="text-xs text-slate-500">Persistence layer</div></div>
+        </div>
+        <p class="text-xs text-slate-400 leading-relaxed">All reads and writes go through SQLAlchemy with connection pooling. Bulk upserts write 5,000 rows per batch. Production uses an SSH tunnel via sshtunnel.</p>
+      </div>
+
+      <div class="glass rounded-2xl p-6 lift">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-slate-500/15 flex items-center justify-center text-lg">⏱️</div>
+          <div><div class="font-semibold">Cron / systemd</div><div class="text-xs text-slate-500">Scheduling</div></div>
+        </div>
+        <p class="text-xs text-slate-400 leading-relaxed">The engine runs as a scheduled daily job. All writes are upsert-safe — re-running any time is safe and will overwrite the existing forecast for the same date.</p>
+      </div>
+    </div>
+
+    <!-- performance note -->
+    <div class="glass rounded-2xl p-6 mt-8 reveal flex flex-col sm:flex-row gap-6 items-center">
+      <div class="text-4xl">⚡</div>
+      <div class="flex-1">
+        <div class="font-bold mb-1">Performance at Scale</div>
+        <p class="text-sm text-slate-400">With 3–4k active SKUs, a typical daily run completes in <strong class="text-white">2–6 minutes</strong> (baseline + SARIMA). With ML enabled: <strong class="text-white">4–10 minutes</strong>. Each failed SKU is isolated — one error cannot crash the entire batch.</p>
+      </div>
+      <div class="grid grid-cols-2 gap-4 flex-shrink-0">
+        <div class="text-center glass-light rounded-xl p-3">
+          <div class="text-xl font-bold text-teal-300">~90ms</div>
+          <div class="text-xs text-slate-400">per SKU avg</div>
+        </div>
+        <div class="text-center glass-light rounded-xl p-3">
+          <div class="text-xl font-bold text-brand-300">1 query</div>
+          <div class="text-xs text-slate-400">bias fetch (batch)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════════════════════════════ -->
+<footer class="py-12 px-6 border-t border-white/5">
+  <div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-500 to-teal-500 flex items-center justify-center text-sm font-bold">M</div>
+      <span class="text-slate-400 text-sm">MedBox Pro Forecast Engine</span>
+    </div>
+    <div class="text-xs text-slate-600 text-center">
+      Built for high-scale retail forecasting with real-world business constraints.<br/>
+      Python · pandas · statsmodels · SARIMA · SQLAlchemy · MySQL
+    </div>
+    <div class="text-xs text-slate-600">AI-generated forecasts — always review before ordering.</div>
+  </div>
+</footer>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     SCRIPTS
+═══════════════════════════════════════════════════════════════ -->
+<script>
+/* ── Scroll reveal ─────────────────────────────────────────── */
+const revealObserver = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+/* ── Flow steps sequential animation ──────────────────────── */
+const flowObs = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      document.querySelectorAll('.flow-step').forEach((el, i) => {
+        setTimeout(() => {
+          el.style.opacity = '1';
+          el.style.transform = 'translateY(0)';
+        }, i * 130);
+      });
+      flowObs.disconnect();
+    }
+  });
+}, { threshold: 0.1 });
+const flowSection = document.getElementById('flowSteps');
+if (flowSection) flowObs.observe(flowSection);
+
+/* ── Nav active pill ───────────────────────────────────────── */
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.nav-pill');
+const navObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const id = e.target.id;
+      navLinks.forEach(l => {
+        l.classList.toggle('active', l.getAttribute('href') === '#'+id);
+      });
+    }
+  });
+}, { threshold: 0.3 });
+sections.forEach(s => navObs.observe(s));
+
+/* ── Chart.js defaults ─────────────────────────────────────── */
+Chart.defaults.color = '#94a3b8';
+Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+
+/* ── Forecast Chart ────────────────────────────────────────── */
+const fCtx = document.getElementById('forecastChart').getContext('2d');
+
+const histLabels  = ['D-7','D-6','D-5','D-4','D-3','D-2','D-1'];
+const histValues  = [20, 23, 22, 25, 24, 27, 26];
+const fcLabels    = ['D+1','D+2','D+3','D+4 💰','D+5 🚀'];
+const fcValues    = [24, 23, 25, 29, 36];
+
+const allLabels   = [...histLabels, ...fcLabels];
+
+// Create gradient
+const gradH = fCtx.createLinearGradient(0, 0, 0, 280);
+gradH.addColorStop(0, 'rgba(99,102,241,0.4)');
+gradH.addColorStop(1, 'rgba(99,102,241,0)');
+
+const gradF = fCtx.createLinearGradient(0, 0, 0, 280);
+gradF.addColorStop(0, 'rgba(45,212,191,0.3)');
+gradF.addColorStop(1, 'rgba(45,212,191,0)');
+
+new Chart(fCtx, {
+  type: 'line',
+  data: {
+    labels: allLabels,
+    datasets: [
+      {
+        label: 'Historical Sales',
+        data: [...histValues, null, null, null, null, null],
+        borderColor: '#818cf8',
+        backgroundColor: gradH,
+        borderWidth: 2.5,
+        pointBackgroundColor: '#818cf8',
+        pointRadius: 4,
+        pointHoverRadius: 6,
+        tension: 0.4,
+        fill: true,
+      },
+      {
+        label: 'AI Forecast',
+        data: [null, null, null, null, null, null, histValues[histValues.length-1], ...fcValues],
+        borderColor: '#2dd4bf',
+        backgroundColor: gradF,
+        borderWidth: 2.5,
+        borderDash: [5, 4],
+        pointBackgroundColor: ['rgba(0,0,0,0)', '#2dd4bf', '#2dd4bf', '#fbbf24', '#4ade80'],
+        pointRadius: [0, 5, 5, 7, 7],
+        pointHoverRadius: 8,
+        tension: 0.4,
+        fill: true,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: 'rgba(15,15,25,0.9)',
+        borderColor: 'rgba(99,102,241,0.3)',
+        borderWidth: 1,
+        padding: 10,
+        callbacks: {
+          label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y ?? '—'} units`
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { color: 'rgba(255,255,255,0.04)' },
+        ticks: { font: { size: 10 } }
+      },
+      y: {
+        grid: { color: 'rgba(255,255,255,0.04)' },
+        ticks: { font: { size: 10 } },
+        min: 0, max: 45,
+      }
+    },
+    animation: { duration: 1200, easing: 'easeInOutQuart' }
+  }
+});
+
+/* ── Event Impact Chart ────────────────────────────────────── */
+const eCtx = document.getElementById('eventChart').getContext('2d');
+new Chart(eCtx, {
+  type: 'bar',
+  data: {
+    labels: ['Normal\nMon','Normal\nTue','Ramadan\nWed','Payday\nThu','Eid\nFri','Normal\nSat','Promo\nSun'],
+    datasets: [{
+      label: 'Forecast Qty',
+      data: [24, 22, 31, 34, 52, 20, 40],
+      backgroundColor: [
+        'rgba(99,102,241,0.6)',
+        'rgba(99,102,241,0.6)',
+        'rgba(168,85,247,0.7)',
+        'rgba(245,158,11,0.7)',
+        'rgba(34,197,94,0.8)',
+        'rgba(99,102,241,0.5)',
+        'rgba(14,165,233,0.7)',
+      ],
+      borderColor: [
+        '#6366f1','#6366f1','#a855f7','#f59e0b','#22c55e','#6366f1','#0ea5e9'
+      ],
+      borderWidth: 1.5,
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: 'rgba(15,15,25,0.9)',
+        borderColor: 'rgba(99,102,241,0.3)',
+        borderWidth: 1,
+        callbacks: { label: ctx => ` ${ctx.parsed.y} units forecast` }
+      }
+    },
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { font: { size: 9 } } },
+      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { font: { size: 10 } }, min: 0 }
+    },
+    animation: { duration: 1000, easing: 'easeOutBounce' }
+  }
+});
+
+/* ── EMA Chart ─────────────────────────────────────────────── */
+const emaCtx = document.getElementById('emaChart').getContext('2d');
+const rawSales = [22, 28, 15, 25, 90, 24, 26, 22, 27, 23];
+const emaVals  = [22, 23.8, 21.2, 22.3, 25.0, 24.7, 25.1, 24.1, 24.9, 24.3];
+const dayLabels = rawSales.map((_,i) => `Day ${i+1}`);
+
+const emaGrad = emaCtx.createLinearGradient(0,0,0,200);
+emaGrad.addColorStop(0,'rgba(45,212,191,0.35)');
+emaGrad.addColorStop(1,'rgba(45,212,191,0)');
+
+new Chart(emaCtx, {
+  type: 'line',
+  data: {
+    labels: dayLabels,
+    datasets: [
+      {
+        label: 'Raw Sales',
+        data: rawSales,
+        borderColor: 'rgba(148,163,184,0.6)',
+        backgroundColor: 'transparent',
+        borderWidth: 1.5,
+        borderDash: [4,3],
+        pointRadius: 3,
+        pointBackgroundColor: 'rgba(148,163,184,0.8)',
+        tension: 0.1,
+      },
+      {
+        label: 'EMA',
+        data: emaVals,
+        borderColor: '#2dd4bf',
+        backgroundColor: emaGrad,
+        borderWidth: 2.5,
+        pointRadius: 4,
+        pointBackgroundColor: '#2dd4bf',
+        tension: 0.4,
+        fill: true,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: 'rgba(15,15,25,0.92)',
+        borderColor: 'rgba(45,212,191,0.3)',
+        borderWidth: 1,
+        callbacks: { label: ctx => ` ${ctx.dataset.label}: ${ctx.parsed.y} units` }
+      }
+    },
+    scales: {
+      x: { grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { font: { size: 9 } } },
+      y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { font: { size: 9 } }, min: 0, max: 100 }
+    },
+    animation: { duration: 1000 }
+  }
+});
+
+/* ── Smooth scroll for nav links ───────────────────────────── */
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+</script>
+</body>
+</html>
