@@ -354,10 +354,72 @@
     @keyframes slideRight { from{opacity:0;transform:translateX( 30px)} to{opacity:1;transform:none} }
     .slide-left  { animation:slideLeft  .6s ease both; }
     .slide-right { animation:slideRight .6s ease both; }
+
+    /* ── SCROLL PROGRESS BAR ──────────────────────────────── */
+    #scroll-progress {
+      position:fixed; top:0; left:0; height:3px; width:0%;
+      background:linear-gradient(90deg,#6366f1,#2dd4bf);
+      z-index:9999; transition:width .1s linear;
+      border-radius:0 2px 2px 0;
+    }
+
+    /* ── TYPEWRITER ───────────────────────────────────────── */
+    .typewriter-wrap .cursor-blink {
+      display:inline-block; width:2px; height:1em;
+      background:currentColor; margin-left:3px;
+      vertical-align:text-bottom;
+      animation:blink .75s step-end infinite;
+    }
+
+    /* ── 3D TILT CARD ─────────────────────────────────────── */
+    .tilt {
+      transform-style:preserve-3d;
+      transition:transform .15s ease, box-shadow .15s ease;
+      will-change:transform;
+    }
+    .tilt:hover { box-shadow:0 24px 48px rgba(99,102,241,.22); }
+    html.light .tilt:hover { box-shadow:0 12px 32px rgba(99,102,241,.14); }
+
+    /* ── SVG SEASONAL WAVE ────────────────────────────────── */
+    .wave-path { stroke-dasharray:600; stroke-dashoffset:600; animation:drawWave 2s ease forwards; }
+    @keyframes drawWave { to { stroke-dashoffset:0; } }
+    .wave-label { opacity:0; animation:fadeIn .4s ease forwards; }
+    @keyframes fadeIn { to { opacity:1; } }
+
+    /* ── RIPPLE BUTTON ────────────────────────────────────── */
+    .ripple-btn { position:relative; overflow:hidden; }
+    .ripple-btn .ripple-circle {
+      position:absolute; border-radius:50%;
+      background:rgba(255,255,255,.35);
+      transform:scale(0); animation:rippleAnim .6s linear;
+      pointer-events:none;
+    }
+    @keyframes rippleAnim { to { transform:scale(4); opacity:0; } }
+
+    /* ── IMPACT STAT RING ─────────────────────────────────── */
+    .stat-ring-wrap { position:relative; width:96px; height:96px; margin:0 auto 12px; }
+    .stat-ring-wrap svg { position:absolute; inset:0; transform:rotate(-90deg); }
+    .stat-ring-track { fill:none; stroke:rgba(255,255,255,.07); stroke-width:6; }
+    html.light .stat-ring-track { stroke:rgba(0,0,0,.07); }
+    .stat-ring-fill  { fill:none; stroke-width:6; stroke-linecap:round;
+                       stroke-dasharray:251; stroke-dashoffset:251;
+                       transition:stroke-dashoffset 1.4s cubic-bezier(.22,1,.36,1); }
+    .stat-ring-val   { position:absolute; inset:0; display:flex; align-items:center;
+                       justify-content:center; font-size:1.1rem; font-weight:800; }
+
+    /* ── FLOATING UP NUMBERS (impact section bg) ──────────── */
+    @keyframes floatUp { 0%{transform:translateY(0);opacity:.6} 100%{transform:translateY(-120px);opacity:0} }
+    .float-num { position:absolute; font-size:.75rem; font-weight:700;
+                 color:#6366f1; animation:floatUp 3s ease-in infinite;
+                 pointer-events:none; opacity:0; }
+    html.light .float-num { color:#4f46e5; }
   </style>
 </head>
 
 <body>
+
+<!-- scroll progress bar -->
+<div id="scroll-progress"></div>
 
 <!-- ════════════════════════════════════════════════════════════
      STICKY NAV
@@ -443,9 +505,8 @@
       How the <span class="hero-gradient-text">MedBox AI</span><br/>Forecast Engine Works
     </h1>
 
-    <p class="text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed">
-      Every day, the system studies historical sales patterns, detects trends, and predicts
-      future demand — so the right medicines are always in stock, automatically.
+    <p class="text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed typewriter-wrap">
+      <span id="typewriter-text"></span><span class="cursor-blink"></span>
     </p>
 
     <!-- hero stat cards -->
@@ -468,7 +529,7 @@
       </div>
     </div>
 
-    <a href="#overview" class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-brand-600 hover:bg-brand-500 transition font-semibold text-sm">
+    <a href="#overview" class="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-brand-600 hover:bg-brand-500 transition font-semibold text-sm ripple-btn">
       Explore How It Works
       <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
     </a>
@@ -989,6 +1050,38 @@
           </div>
         </div>
 
+        <!-- animated seasonal wave -->
+        <div class="glass rounded-2xl p-5 mb-5" id="waveBox">
+          <div class="text-xs text-slate-400 font-semibold uppercase tracking-widest mb-3">Weekly Seasonality Pattern Detected by SARIMA</div>
+          <svg viewBox="0 0 400 100" class="w-full" style="height:90px">
+            <defs>
+              <linearGradient id="waveGrad" x1="0" x2="1">
+                <stop offset="0%" stop-color="#6366f1"/>
+                <stop offset="100%" stop-color="#2dd4bf"/>
+              </linearGradient>
+              <linearGradient id="waveFill" x1="0" x2="0" y1="0" y2="1">
+                <stop offset="0%" stop-color="#6366f1" stop-opacity=".25"/>
+                <stop offset="100%" stop-color="#6366f1" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <!-- fill area -->
+            <path class="wave-path" d="M0,60 C28,60 28,20 57,20 C85,20 85,70 114,70 C142,70 142,25 171,25 C200,25 200,72 228,72 C257,72 257,22 286,22 C314,22 314,68 343,68 C371,68 371,28 400,28 L400,100 L0,100 Z"
+                  fill="url(#waveFill)" stroke="none"/>
+            <!-- wave line -->
+            <path class="wave-path" d="M0,60 C28,60 28,20 57,20 C85,20 85,70 114,70 C142,70 142,25 171,25 C200,25 200,72 228,72 C257,72 257,22 286,22 C314,22 314,68 343,68 C371,68 371,28 400,28"
+                  fill="none" stroke="url(#waveGrad)" stroke-width="2.5"/>
+            <!-- peak labels -->
+            <text class="wave-label" x="57"  y="14" text-anchor="middle" fill="#818cf8" font-size="8" font-family="sans-serif" style="animation-delay:.8s">Fri 📈</text>
+            <text class="wave-label" x="171" y="19" text-anchor="middle" fill="#818cf8" font-size="8" font-family="sans-serif" style="animation-delay:1.2s">Fri 📈</text>
+            <text class="wave-label" x="286" y="16" text-anchor="middle" fill="#818cf8" font-size="8" font-family="sans-serif" style="animation-delay:1.6s">Fri 📈</text>
+            <!-- trough labels -->
+            <text class="wave-label" x="114" y="82" text-anchor="middle" fill="#94a3b8" font-size="8" font-family="sans-serif" style="animation-delay:1.0s">Sun 😴</text>
+            <text class="wave-label" x="228" y="84" text-anchor="middle" fill="#94a3b8" font-size="8" font-family="sans-serif" style="animation-delay:1.4s">Sun 😴</text>
+            <text class="wave-label" x="343" y="80" text-anchor="middle" fill="#94a3b8" font-size="8" font-family="sans-serif" style="animation-delay:1.8s">Sun 😴</text>
+          </svg>
+          <p class="text-xs text-slate-500 mt-1 text-center">SARIMA automatically detects Friday peaks and Sunday dips — no configuration needed.</p>
+        </div>
+
         <!-- example box -->
         <div class="glass-light rounded-2xl p-5 border border-teal-500/20">
           <div class="text-xs text-teal-400 font-semibold uppercase tracking-widest mb-3">Real Example</div>
@@ -1371,26 +1464,39 @@
       <p class="text-slate-400 max-w-xl mx-auto">The forecast engine turns raw transaction history into strategic competitive advantage.</p>
     </div>
 
-    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-12 reveal">
-      <div class="glass rounded-2xl p-6 text-center lift hover:border-red-500/40 border border-transparent transition-all">
-        <div class="text-4xl mb-4">🚫</div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-12 reveal-stagger" id="impactCards">
+      <!-- card with animated ring -->
+      <div class="glass rounded-2xl p-6 text-center tilt lift hover:border-red-500/40 border border-transparent transition-all">
+        <div class="stat-ring-wrap">
+          <svg viewBox="0 0 96 96"><circle class="stat-ring-track" cx="48" cy="48" r="40"/><circle class="stat-ring-fill" cx="48" cy="48" r="40" stroke="#ef4444" data-pct="92"/></svg>
+          <div class="stat-ring-val text-red-400">92%</div>
+        </div>
         <h3 class="font-bold mb-2">Prevents Stockouts</h3>
-        <p class="text-sm text-slate-400">Knowing demand in advance means purchasing before shelves run empty — keeping patients served and revenue protected.</p>
+        <p class="text-sm text-slate-400">Knowing demand in advance means purchasing before shelves run empty.</p>
       </div>
-      <div class="glass rounded-2xl p-6 text-center lift hover:border-amber-500/40 border border-transparent transition-all">
-        <div class="text-4xl mb-4">📉</div>
+      <div class="glass rounded-2xl p-6 text-center tilt lift hover:border-amber-500/40 border border-transparent transition-all">
+        <div class="stat-ring-wrap">
+          <svg viewBox="0 0 96 96"><circle class="stat-ring-track" cx="48" cy="48" r="40"/><circle class="stat-ring-fill" cx="48" cy="48" r="40" stroke="#f59e0b" data-pct="78"/></svg>
+          <div class="stat-ring-val text-amber-400">78%</div>
+        </div>
         <h3 class="font-bold mb-2">Reduces Overstock</h3>
-        <p class="text-sm text-slate-400">Dead-SKU detection and velocity caps ensure slow-moving or expired items aren't over-ordered, freeing working capital.</p>
+        <p class="text-sm text-slate-400">Dead-SKU detection ensures slow-moving items aren't over-ordered.</p>
       </div>
-      <div class="glass rounded-2xl p-6 text-center lift hover:border-green-500/40 border border-transparent transition-all">
-        <div class="text-4xl mb-4">💰</div>
+      <div class="glass rounded-2xl p-6 text-center tilt lift hover:border-green-500/40 border border-transparent transition-all">
+        <div class="stat-ring-wrap">
+          <svg viewBox="0 0 96 96"><circle class="stat-ring-track" cx="48" cy="48" r="40"/><circle class="stat-ring-fill" cx="48" cy="48" r="40" stroke="#22c55e" data-pct="85"/></svg>
+          <div class="stat-ring-val text-green-400">85%</div>
+        </div>
         <h3 class="font-bold mb-2">Improves Cash Flow</h3>
-        <p class="text-sm text-slate-400">Right-sized orders mean capital isn't locked in excess stock. Smarter buying cycles improve liquidity month-over-month.</p>
+        <p class="text-sm text-slate-400">Right-sized orders free up capital locked in excess inventory.</p>
       </div>
-      <div class="glass rounded-2xl p-6 text-center lift hover:border-blue-500/40 border border-transparent transition-all">
-        <div class="text-4xl mb-4">🎯</div>
+      <div class="glass rounded-2xl p-6 text-center tilt lift hover:border-blue-500/40 border border-transparent transition-all">
+        <div class="stat-ring-wrap">
+          <svg viewBox="0 0 96 96"><circle class="stat-ring-track" cx="48" cy="48" r="40"/><circle class="stat-ring-fill" cx="48" cy="48" r="40" stroke="#3b82f6" data-pct="96"/></svg>
+          <div class="stat-ring-val text-blue-400">96%</div>
+        </div>
         <h3 class="font-bold mb-2">Smarter Purchasing</h3>
-        <p class="text-sm text-slate-400">Procurement teams receive data-driven recommendations instead of relying on experience or gut feel alone.</p>
+        <p class="text-sm text-slate-400">Data-driven recommendations replace gut-feel ordering decisions.</p>
       </div>
     </div>
 
@@ -1861,6 +1967,111 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
     if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 });
+
+/* ── Scroll Progress Bar ───────────────────────────────────── */
+const progressBar = document.getElementById('scroll-progress');
+window.addEventListener('scroll', () => {
+  const max = document.body.scrollHeight - window.innerHeight;
+  if (max > 0) progressBar.style.width = (window.scrollY / max * 100) + '%';
+}, { passive: true });
+
+/* ── Typewriter ────────────────────────────────────────────── */
+(function () {
+  const phrases = [
+    'Predicting demand for 10,000+ SKUs — every day.',
+    'EMA · SARIMA · Gradient Boosting — blended intelligently.',
+    'Self-learning bias correction on every run.',
+    'Event-aware: Eid, Ramadan, Payday — all modelled.',
+  ];
+  const el = document.getElementById('typewriter-text');
+  if (!el) return;
+  let pi = 0, ci = 0, deleting = false, hold = 0;
+  function tick() {
+    const phrase = phrases[pi];
+    if (!deleting) {
+      el.textContent = phrase.slice(0, ci + 1);
+      ci++;
+      if (ci === phrase.length) { deleting = true; hold = 55; }
+    } else {
+      if (hold-- > 0) { setTimeout(tick, 38); return; }
+      el.textContent = phrase.slice(0, ci - 1);
+      ci--;
+      if (ci === 0) { deleting = false; pi = (pi + 1) % phrases.length; }
+    }
+    setTimeout(tick, deleting ? 26 : 52);
+  }
+  setTimeout(tick, 700);
+})();
+
+/* ── 3D Tilt on .tilt cards ────────────────────────────────── */
+document.querySelectorAll('.tilt').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const r = card.getBoundingClientRect();
+    const x = (e.clientX - r.left) / r.width  - 0.5;
+    const y = (e.clientY - r.top)  / r.height - 0.5;
+    card.style.transform = `perspective(640px) rotateY(${x * 11}deg) rotateX(${-y * 11}deg) translateY(-4px)`;
+  });
+  card.addEventListener('mouseleave', () => { card.style.transform = ''; });
+});
+
+/* ── Stat Ring Animation ───────────────────────────────────── */
+const ringObs = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.querySelectorAll('.stat-ring-fill').forEach(ring => {
+        const pct = parseFloat(ring.dataset.pct) / 100;
+        ring.style.strokeDashoffset = 251 * (1 - pct);
+      });
+      ringObs.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.3 });
+const impactCards = document.getElementById('impactCards');
+if (impactCards) ringObs.observe(impactCards);
+
+/* ── Ripple on .ripple-btn ─────────────────────────────────── */
+document.querySelectorAll('.ripple-btn').forEach(btn => {
+  btn.addEventListener('click', e => {
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const span = document.createElement('span');
+    span.className = 'ripple-circle';
+    span.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX - rect.left - size / 2}px;top:${e.clientY - rect.top - size / 2}px`;
+    btn.appendChild(span);
+    span.addEventListener('animationend', () => span.remove());
+  });
+});
+
+/* ── Floating numbers in impact section ────────────────────── */
+(function () {
+  const section = document.getElementById('impact');
+  if (!section) return;
+  const tokens = ['92%', '78%', '85%', '96%', '+42', '−18', '×1.3', 'Σ', 'α', 'EMA'];
+  let idx = 0;
+  const spawn = () => {
+    const el = document.createElement('span');
+    el.className = 'float-num';
+    el.textContent = tokens[idx++ % tokens.length];
+    el.style.left   = (8 + Math.random() * 84) + '%';
+    el.style.bottom = (5 + Math.random() * 20) + '%';
+    el.style.animationDuration = (2.8 + Math.random() * 2) + 's';
+    section.appendChild(el);
+    setTimeout(() => el.remove(), 5500);
+  };
+  // Only run when impact section is visible
+  const floatObs = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        spawn();
+        const iv = setInterval(spawn, 750);
+        floatObs._iv = iv;
+      } else {
+        clearInterval(floatObs._iv);
+      }
+    });
+  }, { threshold: 0.2 });
+  floatObs.observe(section);
+})();
 </script>
 </body>
 </html>
