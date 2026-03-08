@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="scroll-smooth">
+<html lang="en" class="scroll-smooth dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -8,6 +8,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     tailwind.config = {
+      darkMode: 'class',
       theme: {
         extend: {
           colors: {
@@ -33,20 +34,62 @@
     }
   </script>
   <style>
+    /* ── CSS variables — dark (default) ────────────────── */
+    :root {
+      --bg:        #0a0a0f;
+      --bg2:       #0f0f1a;
+      --surface:   rgba(255,255,255,.04);
+      --surface2:  rgba(255,255,255,.07);
+      --border:    rgba(255,255,255,.08);
+      --border2:   rgba(255,255,255,.12);
+      --text:      #e2e8f0;
+      --text-muted:#94a3b8;
+      --text-dim:  #64748b;
+      --scrollbar-bg: #0a0a0f;
+      --nav-hover: rgba(255,255,255,.06);
+    }
+
+    /* ── CSS variables — light ──────────────────────────── */
+    html.light {
+      --bg:        #f8fafc;
+      --bg2:       #f1f5f9;
+      --surface:   rgba(255,255,255,.75);
+      --surface2:  rgba(255,255,255,.90);
+      --border:    rgba(0,0,0,.08);
+      --border2:   rgba(0,0,0,.12);
+      --text:      #0f172a;
+      --text-muted:#475569;
+      --text-dim:  #94a3b8;
+      --scrollbar-bg: #f1f5f9;
+      --nav-hover: rgba(0,0,0,.05);
+    }
+
     /* ── base ───────────────────────────────────────────── */
     html { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-    body { background:#0a0a0f; color:#e2e8f0; }
+    body { background: var(--bg); color: var(--text); transition: background .3s, color .3s; }
 
     /* ── gradient text ──────────────────────────────────── */
     .gradient-text { background: linear-gradient(135deg,#818cf8 0%,#2dd4bf 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
     .gradient-text-warm { background: linear-gradient(135deg,#f59e0b 0%,#ef4444 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
 
     /* ── glass card ─────────────────────────────────────── */
-    .glass { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); backdrop-filter:blur(12px); }
-    .glass-light { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.12); }
+    .glass       { background: var(--surface);  border: 1px solid var(--border);  backdrop-filter:blur(12px); transition: background .3s, border .3s; }
+    .glass-light { background: var(--surface2); border: 1px solid var(--border2); backdrop-filter:blur(12px); transition: background .3s, border .3s; }
+
+    /* light-mode card shadow instead of dark-glass effect */
+    html.light .glass       { box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04); }
+    html.light .glass-light { box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06); }
+
+    /* ── text overrides for light ───────────────────────── */
+    html.light .text-slate-400 { color: #475569 !important; }
+    html.light .text-slate-500 { color: #64748b !important; }
+    html.light .text-slate-300 { color: #1e293b !important; }
+    html.light .text-slate-600 { color: #334155 !important; }
+    html.light .text-white     { color: #0f172a !important; }
 
     /* ── hero particles ─────────────────────────────────── */
     .particle { position:absolute; border-radius:50%; animation:float var(--dur,4s) ease-in-out infinite; animation-delay:var(--delay,0s); opacity:.25; }
+    html.light .particle { opacity:.12; }
 
     /* ── section fade-in on scroll ──────────────────────── */
     .reveal { opacity:0; transform:translateY(40px); transition:opacity .7s ease, transform .7s ease; }
@@ -68,11 +111,12 @@
 
     /* ── hover lift ─────────────────────────────────────── */
     .lift { transition:transform .25s ease, box-shadow .25s ease; }
-    .lift:hover { transform:translateY(-4px); box-shadow:0 20px 40px rgba(99,102,241,.25); }
+    .lift:hover { transform:translateY(-4px); box-shadow:0 20px 40px rgba(99,102,241,.18); }
+    html.light .lift:hover { box-shadow:0 12px 32px rgba(99,102,241,.15); }
 
-    /* ── nav pill active ────────────────────────────────── */
-    .nav-pill { padding:6px 16px; border-radius:999px; font-size:.8rem; font-weight:500; transition:all .2s; color:#94a3b8; }
-    .nav-pill:hover { color:#e2e8f0; background:rgba(255,255,255,.06); }
+    /* ── nav pill ───────────────────────────────────────── */
+    .nav-pill { padding:6px 16px; border-radius:999px; font-size:.8rem; font-weight:500; transition:all .2s; color: var(--text-muted); }
+    .nav-pill:hover { color: var(--text); background: var(--nav-hover); }
     .nav-pill.active { color:#fff; background:#4f46e5; }
 
     /* ── chart container ────────────────────────────────── */
@@ -80,26 +124,58 @@
 
     /* ── glow ring ──────────────────────────────────────── */
     .glow-ring { box-shadow:0 0 0 1px rgba(99,102,241,.3), 0 0 24px rgba(99,102,241,.15); }
+    html.light .glow-ring { box-shadow:0 0 0 1px rgba(99,102,241,.25), 0 0 16px rgba(99,102,241,.1); }
 
-    /* ── scroll bar ─────────────────────────────────────── */
-    ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-track { background:#0a0a0f; } ::-webkit-scrollbar-thumb { background:#4f46e5; border-radius:3px; }
+    /* ── scrollbar ──────────────────────────────────────── */
+    ::-webkit-scrollbar { width:6px; }
+    ::-webkit-scrollbar-track { background: var(--scrollbar-bg); }
+    ::-webkit-scrollbar-thumb { background:#4f46e5; border-radius:3px; }
 
     /* ── animated underline ─────────────────────────────── */
-    .anim-underline { position:relative; } .anim-underline::after { content:''; position:absolute; bottom:-2px; left:0; width:0; height:2px; background:linear-gradient(90deg,#6366f1,#2dd4bf); transition:width .4s ease; } .anim-underline:hover::after { width:100%; }
+    .anim-underline { position:relative; }
+    .anim-underline::after { content:''; position:absolute; bottom:-2px; left:0; width:0; height:2px; background:linear-gradient(90deg,#6366f1,#2dd4bf); transition:width .4s ease; }
+    .anim-underline:hover::after { width:100%; }
 
-    /* ── velocity chip ──────────────────────────────────── */
-    .vel-dead   { background:rgba(239,68,68,.15);  color:#f87171; border:1px solid rgba(239,68,68,.3); }
-    .vel-slow   { background:rgba(245,158,11,.12); color:#fbbf24; border:1px solid rgba(245,158,11,.3); }
-    .vel-medium { background:rgba(59,130,246,.12); color:#60a5fa; border:1px solid rgba(59,130,246,.3); }
-    .vel-fast   { background:rgba(34,197,94,.12);  color:#4ade80; border:1px solid rgba(34,197,94,.3); }
+    /* ── velocity chips ─────────────────────────────────── */
+    .vel-dead   { background:rgba(239,68,68,.15);  color:#ef4444; border:1px solid rgba(239,68,68,.3); }
+    .vel-slow   { background:rgba(245,158,11,.12); color:#d97706; border:1px solid rgba(245,158,11,.3); }
+    .vel-medium { background:rgba(59,130,246,.12); color:#2563eb; border:1px solid rgba(59,130,246,.3); }
+    .vel-fast   { background:rgba(34,197,94,.12);  color:#16a34a; border:1px solid rgba(34,197,94,.3); }
+    html.dark .vel-dead   { color:#f87171; }
+    html.dark .vel-slow   { color:#fbbf24; }
+    html.dark .vel-medium { color:#60a5fa; }
+    html.dark .vel-fast   { color:#4ade80; }
 
     /* ── number counter ─────────────────────────────────── */
     @keyframes countUp { from { opacity:0; transform:scale(.8); } to { opacity:1; transform:scale(1); } }
     .count-badge { animation:countUp .5s ease forwards; }
 
-    /* ── responsive table fix ───────────────────────────── */
-    .param-table th { font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color:#64748b; }
+    /* ── table ──────────────────────────────────────────── */
+    .param-table th { font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color: var(--text-dim); }
     .param-table td { font-size:.85rem; }
+
+    /* ── dark-only section tints ────────────────────────── */
+    html.light .bg-brand-900\/30  { background: rgba(238,242,255,.6)  !important; }
+    html.light .bg-amber-900\/10  { background: rgba(255,251,235,.5)  !important; }
+    html.light .bg-teal-900\/30   { background: rgba(240,253,250,.6)  !important; }
+    html.light .bg-slate-900      { background: #f8fafc !important; }
+
+    /* ── theme toggle button ────────────────────────────── */
+    #themeToggle { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; border:1px solid var(--border); background:var(--surface); transition:all .25s; flex-shrink:0; }
+    #themeToggle:hover { background:var(--surface2); }
+    #themeToggle .icon-sun  { display:none; }
+    #themeToggle .icon-moon { display:block; }
+    html.light #themeToggle .icon-sun  { display:block; }
+    html.light #themeToggle .icon-moon { display:none; }
+
+    /* ── light hero bg ──────────────────────────────────── */
+    html.light body { background: linear-gradient(135deg, #f0f4ff 0%, #f8fafc 50%, #f0fdf9 100%); }
+
+    /* ── keyframes ──────────────────────────────────────── */
+    @keyframes float   { 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-12px) } }
+    @keyframes slideUp { from{ opacity:0; transform:translateY(30px) } to{ opacity:1; transform:translateY(0) } }
+    @keyframes flow    { 0%,100%{ opacity:.4 } 50%{ opacity:1 } }
+    @keyframes dash    { to{ stroke-dashoffset:-20 } }
   </style>
 </head>
 
@@ -123,6 +199,17 @@
       <a href="#example"   class="nav-pill whitespace-nowrap">Example</a>
       <a href="#impact"    class="nav-pill whitespace-nowrap">Impact</a>
     </div>
+    <button id="themeToggle" aria-label="Toggle theme" title="Toggle light / dark">
+      <!-- moon (shown in dark mode) -->
+      <svg class="icon-moon w-4 h-4 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/>
+      </svg>
+      <!-- sun (shown in light mode) -->
+      <svg class="icon-sun w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="5"/>
+        <path stroke-linecap="round" d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+      </svg>
+    </button>
   </div>
 </nav>
 
@@ -1245,6 +1332,28 @@
      SCRIPTS
 ═══════════════════════════════════════════════════════════════ -->
 <script>
+/* ── Theme toggle ──────────────────────────────────────────── */
+const html = document.documentElement;
+
+// Persist preference
+const saved = localStorage.getItem('theme');
+if (saved === 'light') html.classList.replace('dark','light');
+
+function updateChartColors() {
+  const isDark = html.classList.contains('dark');
+  Chart.defaults.color = isDark ? '#94a3b8' : '#475569';
+  // re-render all registered charts
+  Object.values(Chart.instances).forEach(c => c.update());
+}
+
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const goLight = html.classList.contains('dark');
+  html.classList.toggle('dark', !goLight);
+  html.classList.toggle('light', goLight);
+  localStorage.setItem('theme', goLight ? 'light' : 'dark');
+  updateChartColors();
+});
+
 /* ── Scroll reveal ─────────────────────────────────────────── */
 const revealObserver = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
@@ -1284,7 +1393,7 @@ const navObs = new IntersectionObserver((entries) => {
 sections.forEach(s => navObs.observe(s));
 
 /* ── Chart.js defaults ─────────────────────────────────────── */
-Chart.defaults.color = '#94a3b8';
+Chart.defaults.color = html.classList.contains('light') ? '#475569' : '#94a3b8';
 Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
 /* ── Forecast Chart ────────────────────────────────────────── */
