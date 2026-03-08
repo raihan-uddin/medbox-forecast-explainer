@@ -413,6 +413,20 @@
                  color:#6366f1; animation:floatUp 3s ease-in infinite;
                  pointer-events:none; opacity:0; }
     html.light .float-num { color:#4f46e5; }
+
+    /* ── SKU Example Tabs ─────────────────────────────────────── */
+    .sku-tab {
+      padding:8px 20px; border-radius:999px; font-size:.82rem; font-weight:600;
+      border:1px solid var(--border); background:var(--surface); color:var(--text-muted);
+      cursor:pointer; transition:all .2s ease;
+    }
+    .sku-tab:hover { background:var(--surface2); color:var(--text); }
+    .sku-tab.active { background:#4f46e5; border-color:#4f46e5; color:#fff !important; }
+
+    .vel-seasonal { background:rgba(20,184,166,.12); color:#0d9488; border:1px solid rgba(20,184,166,.25); }
+    .vel-scattered { background:rgba(244,63,94,.12);  color:#e11d48; border:1px solid rgba(244,63,94,.25); }
+    html.dark .vel-seasonal  { color:#2dd4bf; }
+    html.dark .vel-scattered { color:#fb7185; }
   </style>
 </head>
 
@@ -1246,114 +1260,399 @@
 
 
 <!-- ════════════════════════════════════════════════════════════
-     REAL PRODUCT EXAMPLE
+     SKU BEHAVIOR EXAMPLES
 ═══════════════════════════════════════════════════════════════ -->
 <section id="example" class="py-24 px-6">
   <div class="max-w-6xl mx-auto">
-    <div class="text-center mb-16 reveal">
-      <div class="text-green-400 text-sm font-semibold uppercase tracking-widest mb-3">Real-World Example</div>
-      <h2 class="text-3xl sm:text-5xl font-bold mb-4">Walk-Through: Napa Extra 500mg</h2>
-      <p class="text-slate-400 max-w-xl mx-auto">Let's trace exactly what happens when the engine forecasts one product.</p>
+
+    <div class="text-center mb-12 reveal">
+      <div class="text-green-400 text-sm font-semibold uppercase tracking-widest mb-3">Real-World Examples</div>
+      <h2 class="text-3xl sm:text-5xl font-bold mb-4">How Each SKU Type Is Handled</h2>
+      <p class="text-slate-400 max-w-xl mx-auto">The engine adapts its strategy to each product's demand pattern. No two SKUs are treated the same way.</p>
     </div>
 
-    <div class="grid lg:grid-cols-2 gap-12 items-start">
+    <!-- Tab selector -->
+    <div class="flex flex-wrap justify-center gap-2 mb-10 reveal">
+      <button class="sku-tab active" data-tab="0">🚀 Fast-Moving</button>
+      <button class="sku-tab" data-tab="1">🐢 Slow-Moving</button>
+      <button class="sku-tab" data-tab="2">🌊 Seasonal</button>
+      <button class="sku-tab" data-tab="3">⚡ Scattered / Erratic</button>
+    </div>
 
-      <!-- left: step-by-step -->
-      <div class="reveal space-y-4">
 
-        <div class="glass rounded-2xl p-5 lift border-l-4 border-brand-500">
-          <div class="flex items-center gap-3 mb-3">
-            <div class="w-7 h-7 rounded-full bg-brand-500 flex items-center justify-center text-xs font-bold flex-shrink-0">1</div>
-            <span class="font-semibold">Load Sales History</span>
+    <!-- ══ Panel 0: Fast-Moving ══════════════════════════════════ -->
+    <div class="sku-panel" data-panel="0">
+      <div class="grid lg:grid-cols-2 gap-12 items-start">
+
+        <div class="reveal space-y-4">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="vel-fast sarima-badge px-4 py-1.5">🚀 Fast</span>
+            <div><div class="font-bold">Napa Extra 500mg</div><div class="text-xs text-slate-500">High-volume, consistent daily demand</div></div>
           </div>
-          <div class="grid grid-cols-4 gap-2 text-center">
-            <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">Day 1</div><div class="font-bold text-brand-300">22</div></div>
-            <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">Day 2</div><div class="font-bold text-brand-300">25</div></div>
-            <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">Day 3</div><div class="font-bold text-brand-300">24</div></div>
-            <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">Day 4</div><div class="font-bold text-brand-300">27</div></div>
+
+          <div class="glass rounded-2xl p-5 lift border-l-4 border-brand-500">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-7 h-7 rounded-full bg-brand-500 flex items-center justify-center text-xs font-bold flex-shrink-0">1</div>
+              <span class="font-semibold">Load Sales History</span>
+            </div>
+            <div class="grid grid-cols-4 gap-2 text-center">
+              <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">Day 1</div><div class="font-bold text-brand-300">22</div></div>
+              <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">Day 2</div><div class="font-bold text-brand-300">25</div></div>
+              <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">Day 3</div><div class="font-bold text-brand-300">24</div></div>
+              <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">Day 4</div><div class="font-bold text-brand-300">27</div></div>
+            </div>
+            <div class="text-xs text-slate-400 mt-3">Average: 24.5 units/day → classified <span class="vel-fast sarima-badge ml-1">🚀 Fast</span></div>
           </div>
-          <div class="text-xs text-slate-400 mt-3">Average: 24.5 units/day → classified <span class="vel-fast sarima-badge ml-1">🚀 Fast</span></div>
+
+          <div class="step-line opacity-30"></div>
+
+          <div class="glass rounded-2xl p-5 lift border-l-4 border-teal-500">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-7 h-7 rounded-full bg-teal-500 flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>
+              <span class="font-semibold">EMA Baseline Computed</span>
+            </div>
+            <p class="text-sm text-slate-400">EMA = 0.30 × 27 + 0.70 × 23.8 = <strong class="text-white">24.8 units</strong></p>
+            <p class="text-xs text-slate-500 mt-2">Yesterday's actual was higher (27) so EMA nudges upward. Bias factor = 1.02 (slightly under-forecasting historically).</p>
+          </div>
+
+          <div class="step-line opacity-30"></div>
+
+          <div class="glass rounded-2xl p-5 lift border-l-4 border-purple-500">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-7 h-7 rounded-full bg-purple-500 flex items-center justify-center text-xs font-bold flex-shrink-0">3</div>
+              <span class="font-semibold">SARIMA Detects Friday Spike</span>
+            </div>
+            <p class="text-sm text-slate-400">SARIMA's weekly cycle (s=7) notes this product sells 35% more on Fridays. Forecast for next Friday: <strong class="text-white">33 units</strong>.</p>
+          </div>
+
+          <div class="step-line opacity-30"></div>
+
+          <div class="glass rounded-2xl p-5 lift border-l-4 border-amber-500">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-7 h-7 rounded-full bg-amber-500 flex items-center justify-center text-xs font-bold flex-shrink-0">4</div>
+              <span class="font-semibold">Event Calendar Check</span>
+            </div>
+            <p class="text-sm text-slate-400">Next Thursday = Payday. EventCalendar returns multiplier <strong class="text-white">1.18×</strong>. Thursday baseline 25 → <strong class="text-white">29 units</strong> adjusted.</p>
+          </div>
+
+          <div class="step-line opacity-30"></div>
+
+          <div class="glass rounded-2xl p-5 lift border-l-4 border-green-500 glow-ring">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center text-xs font-bold flex-shrink-0">5</div>
+              <span class="font-semibold">Final Forecast Output</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-center mb-3">
+              <div><div class="text-xs text-slate-500">5-Day Total</div><div class="font-bold text-2xl text-green-300">137</div><div class="text-xs text-slate-500">units</div></div>
+              <div><div class="text-xs text-slate-500">Recommended Order</div><div class="font-bold text-2xl text-white">160</div><div class="text-xs text-slate-500">units (+17% buffer)</div></div>
+              <div><div class="text-xs text-slate-500">Method</div><div class="font-bold text-sm text-brand-300 mt-2">blend</div><div class="text-xs text-slate-500">SARIMA 45%</div></div>
+            </div>
+          </div>
         </div>
 
-        <div class="step-line opacity-30"></div>
-
-        <div class="glass rounded-2xl p-5 lift border-l-4 border-teal-500">
-          <div class="flex items-center gap-3 mb-3">
-            <div class="w-7 h-7 rounded-full bg-teal-500 flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>
-            <span class="font-semibold">EMA Baseline Computed</span>
+        <div class="reveal">
+          <div class="glass rounded-3xl p-6">
+            <div class="text-sm font-semibold mb-1">Napa Extra 500mg — Historical + 5-Day Forecast</div>
+            <div class="text-xs text-slate-500 mb-4">Actual sales (solid) vs AI prediction (dashed)</div>
+            <div class="chart-wrap"><canvas id="forecastChart"></canvas></div>
+            <div class="flex gap-4 mt-4 justify-center text-xs">
+              <div class="flex items-center gap-1.5"><div class="w-4 h-0.5 bg-brand-400"></div><span class="text-slate-400">Historical Sales</span></div>
+              <div class="flex items-center gap-1.5"><div class="w-4 h-0.5 bg-teal-400"></div><span class="text-slate-400">AI Forecast</span></div>
+              <div class="flex items-center gap-1.5"><div class="w-4 h-0.5 bg-amber-400 opacity-60"></div><span class="text-slate-400">Event Day</span></div>
+            </div>
           </div>
-          <p class="text-sm text-slate-400">EMA = 0.30 × 27 + 0.70 × 23.8 = <strong class="text-white">24.8 units</strong></p>
-          <p class="text-xs text-slate-500 mt-2">Yesterday's actual was higher (27) so EMA nudges upward. Bias factor = 1.02 (slightly under-forecasting historically).</p>
-        </div>
-
-        <div class="step-line opacity-30"></div>
-
-        <div class="glass rounded-2xl p-5 lift border-l-4 border-purple-500">
-          <div class="flex items-center gap-3 mb-3">
-            <div class="w-7 h-7 rounded-full bg-purple-500 flex items-center justify-center text-xs font-bold flex-shrink-0">3</div>
-            <span class="font-semibold">SARIMA Detects Friday Spike</span>
-          </div>
-          <p class="text-sm text-slate-400">SARIMA's weekly cycle (s=7) notes that this product sells 35% more on Fridays. Forecast for next Friday: <strong class="text-white">33 units</strong>.</p>
-        </div>
-
-        <div class="step-line opacity-30"></div>
-
-        <div class="glass rounded-2xl p-5 lift border-l-4 border-amber-500">
-          <div class="flex items-center gap-3 mb-3">
-            <div class="w-7 h-7 rounded-full bg-amber-500 flex items-center justify-center text-xs font-bold flex-shrink-0">4</div>
-            <span class="font-semibold">Event Calendar Check</span>
-          </div>
-          <p class="text-sm text-slate-400">Next Thursday = Payday. EventCalendar returns multiplier <strong class="text-white">1.18×</strong>. Thursday baseline 25 → <strong class="text-white">29 units</strong> adjusted.</p>
-        </div>
-
-        <div class="step-line opacity-30"></div>
-
-        <div class="glass rounded-2xl p-5 lift border-l-4 border-green-500 glow-ring">
-          <div class="flex items-center gap-3 mb-3">
-            <div class="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center text-xs font-bold flex-shrink-0">5</div>
-            <span class="font-semibold">Final Forecast Output</span>
-          </div>
-          <div class="grid grid-cols-3 gap-2 text-center mb-3">
-            <div><div class="text-xs text-slate-500">5-Day Total</div><div class="font-bold text-2xl text-green-300">137</div><div class="text-xs text-slate-500">units</div></div>
-            <div><div class="text-xs text-slate-500">Recommended Order</div><div class="font-bold text-2xl text-white">160</div><div class="text-xs text-slate-500">units (+17% buffer)</div></div>
-            <div><div class="text-xs text-slate-500">Method</div><div class="font-bold text-sm text-brand-300 mt-2">blend</div><div class="text-xs text-slate-500">SARIMA 45%</div></div>
+          <div class="glass rounded-2xl p-5 mt-5">
+            <div class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">5-Day Forecast Breakdown</div>
+            <table class="w-full text-sm param-table">
+              <thead><tr class="text-left border-b border-white/5">
+                <th class="pb-2">Day</th><th class="pb-2">Date</th><th class="pb-2">Qty</th><th class="pb-2">Notes</th>
+              </tr></thead>
+              <tbody class="divide-y divide-white/5">
+                <tr><td class="py-2 text-slate-300">Mon</td><td class="text-slate-400">+1</td><td class="font-semibold text-white">24</td><td class="text-slate-500 text-xs">baseline</td></tr>
+                <tr><td class="py-2 text-slate-300">Tue</td><td class="text-slate-400">+2</td><td class="font-semibold text-white">23</td><td class="text-slate-500 text-xs">baseline</td></tr>
+                <tr><td class="py-2 text-slate-300">Wed</td><td class="text-slate-400">+3</td><td class="font-semibold text-white">25</td><td class="text-slate-500 text-xs">mid-week uptick</td></tr>
+                <tr><td class="py-2 text-slate-300">Thu</td><td class="text-slate-400">+4</td><td class="font-semibold text-amber-300">29</td><td class="text-amber-500 text-xs">💰 Payday ×1.18</td></tr>
+                <tr><td class="py-2 text-slate-300">Fri</td><td class="text-slate-400">+5</td><td class="font-semibold text-green-300">36</td><td class="text-green-500 text-xs">🚀 Friday peak</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
+    </div><!-- /panel 0 -->
 
-      <!-- right: chart -->
-      <div class="reveal">
-        <div class="glass rounded-3xl p-6">
-          <div class="text-sm font-semibold mb-1">Napa Extra 500mg — Historical + 5-Day Forecast</div>
-          <div class="text-xs text-slate-500 mb-4">Actual sales (solid) vs AI prediction (dashed)</div>
-          <div class="chart-wrap">
-            <canvas id="forecastChart"></canvas>
+
+    <!-- ══ Panel 1: Slow-Moving ══════════════════════════════════ -->
+    <div class="sku-panel" data-panel="1" style="display:none">
+      <div class="grid lg:grid-cols-2 gap-12 items-start">
+
+        <div class="space-y-4">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="vel-slow sarima-badge px-4 py-1.5">🐢 Slow</span>
+            <div><div class="font-bold">Atorvastatin 80mg Tablet</div><div class="text-xs text-slate-500">Specialty medication — rare, sporadic demand</div></div>
           </div>
-          <div class="flex gap-4 mt-4 justify-center text-xs">
-            <div class="flex items-center gap-1.5"><div class="w-4 h-0.5 bg-brand-400"></div><span class="text-slate-400">Historical Sales</span></div>
-            <div class="flex items-center gap-1.5"><div class="w-4 h-0.5 bg-teal-400 border-dashed border-t border-teal-400"></div><span class="text-slate-400">AI Forecast</span></div>
-            <div class="flex items-center gap-1.5"><div class="w-4 h-0.5 bg-amber-400 opacity-60"></div><span class="text-slate-400">Event Day</span></div>
+
+          <div class="glass rounded-2xl p-5 lift border-l-4 border-amber-500">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-7 h-7 rounded-full bg-amber-500 flex items-center justify-center text-xs font-bold flex-shrink-0">1</div>
+              <span class="font-semibold">Sparse Demand Detected</span>
+            </div>
+            <div class="grid grid-cols-5 gap-1 text-center mb-3">
+              <div class="glass-light rounded-lg p-1.5"><div class="text-xs text-slate-500">D1–2</div><div class="font-bold text-slate-400 text-sm">0</div></div>
+              <div class="glass-light rounded-lg p-1.5"><div class="text-xs text-slate-500">D3</div><div class="font-bold text-amber-300 text-sm">2</div></div>
+              <div class="glass-light rounded-lg p-1.5"><div class="text-xs text-slate-500">D6</div><div class="font-bold text-amber-300 text-sm">1</div></div>
+              <div class="glass-light rounded-lg p-1.5"><div class="text-xs text-slate-500">D9</div><div class="font-bold text-amber-300 text-sm">3</div></div>
+              <div class="glass-light rounded-lg p-1.5"><div class="text-xs text-slate-500">rest</div><div class="font-bold text-slate-400 text-sm">0</div></div>
+            </div>
+            <p class="text-xs text-slate-400">6 sale-days out of 20. Average <strong class="text-amber-300">0.5 units/day</strong> → classified <span class="vel-slow sarima-badge ml-1">🐢 Slow</span></p>
+          </div>
+
+          <div class="step-line opacity-30"></div>
+
+          <div class="glass rounded-2xl p-5 lift border-l-4 border-teal-500">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-7 h-7 rounded-full bg-teal-500 flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>
+              <span class="font-semibold">Conservative EMA Maintained</span>
+            </div>
+            <p class="text-sm text-slate-400">EMA stays low at <strong class="text-white">~0.5 units/day</strong>. Zero-sale days pull it down gently (α=0.30). Bias stays neutral at <strong class="text-white">1.0</strong>.</p>
+          </div>
+
+          <div class="step-line opacity-30"></div>
+
+          <div class="glass rounded-2xl p-5 lift border-l-4 border-slate-500">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-7 h-7 rounded-full bg-slate-600 flex items-center justify-center text-xs font-bold flex-shrink-0">3</div>
+              <span class="font-semibold">SARIMA &amp; ML Skipped</span>
+            </div>
+            <p class="text-sm text-slate-400">Insufficient non-zero data for statistical modelling. Both models are bypassed. Forecast is <strong class="text-white">100% EMA baseline</strong>.</p>
+            <div class="mt-3 p-2 rounded-lg bg-slate-500/10 border border-slate-500/20 text-xs text-slate-400">
+              ℹ️ SARIMA needs at least 2× the seasonal period (14 days) of non-zero sales to fit reliably.
+            </div>
+          </div>
+
+          <div class="step-line opacity-30"></div>
+
+          <div class="glass rounded-2xl p-5 lift border-l-4 border-green-500 glow-ring">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center text-xs font-bold flex-shrink-0">4</div>
+              <span class="font-semibold">Minimal, Safe Forecast</span>
+            </div>
+            <div class="grid grid-cols-3 gap-3 text-center">
+              <div class="glass-light rounded-xl p-2"><div class="text-xs text-slate-500">5-Day Total</div><div class="font-bold text-xl text-amber-300">4</div><div class="text-xs text-slate-500">units</div></div>
+              <div class="glass-light rounded-xl p-2"><div class="text-xs text-slate-500">Method</div><div class="font-bold text-sm text-slate-300 mt-1">ema_only</div></div>
+              <div class="glass-light rounded-xl p-2"><div class="text-xs text-slate-500">Overstock risk</div><div class="font-bold text-sm text-green-400 mt-1">Very Low</div></div>
+            </div>
           </div>
         </div>
 
-        <!-- daily breakdown table -->
-        <div class="glass rounded-2xl p-5 mt-5">
-          <div class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4">5-Day Forecast Breakdown</div>
-          <table class="w-full text-sm param-table">
-            <thead><tr class="text-left border-b border-white/5 pb-2">
-              <th class="pb-2">Day</th><th class="pb-2">Date</th><th class="pb-2">Qty</th><th class="pb-2">Notes</th>
-            </tr></thead>
-            <tbody class="divide-y divide-white/5">
-              <tr class="py-2"><td class="py-2 text-slate-300">Mon</td><td class="text-slate-400">+1</td><td class="font-semibold text-white">24</td><td class="text-slate-500 text-xs">baseline</td></tr>
-              <tr class="py-2"><td class="py-2 text-slate-300">Tue</td><td class="text-slate-400">+2</td><td class="font-semibold text-white">23</td><td class="text-slate-500 text-xs">baseline</td></tr>
-              <tr class="py-2"><td class="py-2 text-slate-300">Wed</td><td class="text-slate-400">+3</td><td class="font-semibold text-white">25</td><td class="text-slate-500 text-xs">mid-week uptick</td></tr>
-              <tr class="py-2"><td class="py-2 text-slate-300">Thu</td><td class="text-slate-400">+4</td><td class="font-semibold text-amber-300">29</td><td class="text-amber-500 text-xs">💰 Payday ×1.18</td></tr>
-              <tr class="py-2"><td class="py-2 text-slate-300">Fri</td><td class="text-slate-400">+5</td><td class="font-semibold text-green-300">36</td><td class="text-green-500 text-xs">🚀 Friday peak</td></tr>
-            </tbody>
-          </table>
+        <div>
+          <div class="glass rounded-3xl p-6">
+            <div class="text-sm font-semibold mb-1">Atorvastatin 80mg — 20-Day Demand History</div>
+            <div class="text-xs text-slate-500 mb-4">Sales only occur on 6 out of 20 days</div>
+            <div style="position:relative;height:240px"><canvas id="slowChart"></canvas></div>
+            <div class="flex gap-4 mt-4 justify-center text-xs flex-wrap">
+              <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded bg-amber-400/70"></div><span class="text-slate-400">Sale Days</span></div>
+              <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded bg-slate-600/80"></div><span class="text-slate-400">Zero Days</span></div>
+              <div class="flex items-center gap-1.5"><div class="w-4 h-0.5 bg-teal-400"></div><span class="text-slate-400">EMA</span></div>
+            </div>
+          </div>
+          <div class="glass rounded-2xl p-5 mt-5">
+            <div class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">5-Day Conservative Forecast</div>
+            <div class="grid grid-cols-5 gap-2 text-center mb-3">
+              <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">+1</div><div class="font-bold text-amber-300">0</div></div>
+              <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">+2</div><div class="font-bold text-amber-300">1</div></div>
+              <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">+3</div><div class="font-bold text-amber-300">0</div></div>
+              <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">+4</div><div class="font-bold text-amber-300">1</div></div>
+              <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">+5</div><div class="font-bold text-amber-300">0</div></div>
+            </div>
+            <p class="text-xs text-slate-500">Engine forecasts ~0.5/day, rounded conservatively. Avoids over-ordering expensive specialty stock. Reorders trigger only when safety stock is breached.</p>
+          </div>
         </div>
       </div>
-    </div>
+    </div><!-- /panel 1 -->
+
+
+    <!-- ══ Panel 2: Seasonal ══════════════════════════════════════ -->
+    <div class="sku-panel" data-panel="2" style="display:none">
+      <div class="grid lg:grid-cols-2 gap-12 items-start">
+
+        <div class="space-y-4">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="vel-seasonal sarima-badge px-4 py-1.5">🌊 Seasonal</span>
+            <div><div class="font-bold">Vitamin C 1000mg Effervescent</div><div class="text-xs text-slate-500">Demand surges every flu/cold season (Oct–Feb)</div></div>
+          </div>
+
+          <div class="glass rounded-2xl p-5 lift border-l-4 border-teal-500">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-7 h-7 rounded-full bg-teal-500 flex items-center justify-center text-xs font-bold flex-shrink-0">1</div>
+              <span class="font-semibold">Rising Demand Trend Observed</span>
+            </div>
+            <div class="grid grid-cols-4 gap-2 text-center mb-3">
+              <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">Week 1</div><div class="font-bold text-teal-300 text-sm">~5/day</div></div>
+              <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">Week 2</div><div class="font-bold text-teal-300 text-sm">~11/day</div></div>
+              <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">Week 3</div><div class="font-bold text-teal-300 text-sm">~17/day</div></div>
+              <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">Week 4</div><div class="font-bold text-teal-300 text-sm">~24/day</div></div>
+            </div>
+            <p class="text-xs text-slate-400">5× demand increase over 4 weeks. EMA adapts upward — α=0.30 means ~75% of a level shift is captured within 5 days.</p>
+          </div>
+
+          <div class="step-line opacity-30"></div>
+
+          <div class="glass rounded-2xl p-5 lift border-l-4 border-brand-500">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-7 h-7 rounded-full bg-brand-500 flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>
+              <span class="font-semibold">Velocity Auto-Upgrades</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 text-sm">
+              <div class="text-center"><span class="vel-slow sarima-badge">🐢 Slow</span><div class="text-xs text-slate-500 mt-1">Week 1</div></div>
+              <div class="text-teal-400 font-bold">→</div>
+              <div class="text-center"><span class="vel-medium sarima-badge">Medium</span><div class="text-xs text-slate-500 mt-1">Wk 2–3</div></div>
+              <div class="text-teal-400 font-bold">→</div>
+              <div class="text-center"><span class="vel-fast sarima-badge">🚀 Fast</span><div class="text-xs text-slate-500 mt-1">Week 4</div></div>
+            </div>
+            <p class="text-xs text-slate-400 mt-3">As velocity upgrades, SARIMA and ML are progressively included in the ensemble blend.</p>
+          </div>
+
+          <div class="step-line opacity-30"></div>
+
+          <div class="glass rounded-2xl p-5 lift border-l-4 border-purple-500">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-7 h-7 rounded-full bg-purple-500 flex items-center justify-center text-xs font-bold flex-shrink-0">3</div>
+              <span class="font-semibold">SARIMA Catches Weekly Pattern</span>
+            </div>
+            <p class="text-sm text-slate-400">Within the seasonal ramp, SARIMA (s=7) detects <strong class="text-white">weekend spikes</strong> — people buy Vitamin C on Fridays and Saturdays. Adjusts next-day forecasts accordingly.</p>
+          </div>
+
+          <div class="step-line opacity-30"></div>
+
+          <div class="glass rounded-2xl p-5 lift border-l-4 border-green-500 glow-ring">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center text-xs font-bold flex-shrink-0">4</div>
+              <span class="font-semibold">Forecast Projects Seasonal Ramp</span>
+            </div>
+            <div class="grid grid-cols-3 gap-3 text-center">
+              <div class="glass-light rounded-xl p-2"><div class="text-xs text-slate-500">5-Day Total</div><div class="font-bold text-xl text-teal-300">163</div><div class="text-xs text-slate-500">units</div></div>
+              <div class="glass-light rounded-xl p-2"><div class="text-xs text-slate-500">Peak Day</div><div class="font-bold text-xl text-teal-300">38</div><div class="text-xs text-slate-500">units/day</div></div>
+              <div class="glass-light rounded-xl p-2"><div class="text-xs text-slate-500">Method</div><div class="font-bold text-sm text-brand-300 mt-1">blend</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="glass rounded-3xl p-6">
+            <div class="text-sm font-semibold mb-1">Vitamin C 1000mg — Seasonal Ramp + Forecast</div>
+            <div class="text-xs text-slate-500 mb-4">28 days of rising demand + 5-day AI projection (dashed)</div>
+            <div style="position:relative;height:240px"><canvas id="seasonalChart"></canvas></div>
+            <div class="flex gap-4 mt-4 justify-center text-xs">
+              <div class="flex items-center gap-1.5"><div class="w-4 h-0.5 bg-teal-400"></div><span class="text-slate-400">Historical</span></div>
+              <div class="flex items-center gap-1.5"><div class="w-4 h-0.5 bg-purple-400"></div><span class="text-slate-400">AI Forecast</span></div>
+            </div>
+          </div>
+          <div class="glass rounded-2xl p-5 mt-5">
+            <div class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">5-Day Forecast (Seasonal Peak)</div>
+            <div class="grid grid-cols-5 gap-2 text-center mb-3">
+              <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">+1 Mon</div><div class="font-bold text-teal-300">27</div></div>
+              <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">+2 Tue</div><div class="font-bold text-teal-300">29</div></div>
+              <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">+3 Wed</div><div class="font-bold text-teal-300">30</div></div>
+              <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">+4 Fri</div><div class="font-bold text-purple-300">34</div></div>
+              <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">+5 Sat</div><div class="font-bold text-purple-300">38</div></div>
+            </div>
+            <p class="text-xs text-slate-500">EMA tracks the rising baseline. SARIMA adds the Fri/Sat weekly peak. The blend projects continued seasonal surge.</p>
+          </div>
+        </div>
+      </div>
+    </div><!-- /panel 2 -->
+
+
+    <!-- ══ Panel 3: Scattered / Erratic ══════════════════════════ -->
+    <div class="sku-panel" data-panel="3" style="display:none">
+      <div class="grid lg:grid-cols-2 gap-12 items-start">
+
+        <div class="space-y-4">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="vel-scattered sarima-badge px-4 py-1.5">⚡ Scattered</span>
+            <div><div class="font-bold">ORS Sachet 10-Pack</div><div class="text-xs text-slate-500">Hospital bulk orders mixed with near-zero daily sales</div></div>
+          </div>
+
+          <div class="glass rounded-2xl p-5 lift border-l-4 border-rose-500">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-7 h-7 rounded-full bg-rose-500 flex items-center justify-center text-xs font-bold flex-shrink-0">1</div>
+              <span class="font-semibold">High Variance — Lumpy Demand</span>
+            </div>
+            <div class="grid grid-cols-5 gap-1 text-center mb-3">
+              <div class="glass-light rounded-lg p-1.5"><div class="text-xs text-slate-500">D1</div><div class="font-bold text-slate-400 text-sm">2</div></div>
+              <div class="glass-light rounded-lg p-1.5 border border-red-500/50"><div class="text-xs text-slate-500">D3</div><div class="font-bold text-red-400 text-sm">25</div></div>
+              <div class="glass-light rounded-lg p-1.5 border border-red-500/50"><div class="text-xs text-slate-500">D7</div><div class="font-bold text-red-400 text-sm">22</div></div>
+              <div class="glass-light rounded-lg p-1.5 border border-red-500/50"><div class="text-xs text-slate-500">D12</div><div class="font-bold text-red-400 text-sm">28</div></div>
+              <div class="glass-light rounded-lg p-1.5"><div class="text-xs text-slate-500">rest</div><div class="font-bold text-slate-400 text-sm">0–3</div></div>
+            </div>
+            <p class="text-xs text-slate-400">Mean = 18/day (inflated by spikes). Median = 1/day. Classic <strong class="text-rose-400">lumpy demand</strong> — unpredictable bulk orders from a hospital buyer.</p>
+          </div>
+
+          <div class="step-line opacity-30"></div>
+
+          <div class="glass rounded-2xl p-5 lift border-l-4 border-amber-500">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-7 h-7 rounded-full bg-amber-500 flex items-center justify-center text-xs font-bold flex-shrink-0">2</div>
+              <span class="font-semibold">Spike Guard Activates</span>
+            </div>
+            <p class="text-sm text-slate-400">On Day 3 (actual=25): <code class="text-amber-300 text-xs bg-amber-500/10 px-1 rounded">25 &gt; 1.8 × EMA(1.4) = 2.52</code> → spike detected. EMA updated using capped value <strong class="text-white">2.52</strong>, not raw 25.</p>
+            <div class="mt-3 p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs text-amber-400">
+              ⚡ Without the spike guard: EMA jumps to ~8.5, inflating every future forecast by 4× and causing massive over-ordering.
+            </div>
+          </div>
+
+          <div class="step-line opacity-30"></div>
+
+          <div class="glass rounded-2xl p-5 lift border-l-4 border-purple-500">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-7 h-7 rounded-full bg-purple-500 flex items-center justify-center text-xs font-bold flex-shrink-0">3</div>
+              <span class="font-semibold">SARIMA Trained but De-weighted</span>
+            </div>
+            <p class="text-sm text-slate-400">SARIMA fits but produces high AIC on noisy data — low confidence. Its weight in the blend is reduced. Bias learning slowly corrects over-forecasts on quiet days.</p>
+          </div>
+
+          <div class="step-line opacity-30"></div>
+
+          <div class="glass rounded-2xl p-5 lift border-l-4 border-green-500 glow-ring">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center text-xs font-bold flex-shrink-0">4</div>
+              <span class="font-semibold">Conservative Baseline Forecast</span>
+            </div>
+            <div class="grid grid-cols-3 gap-3 text-center mb-3">
+              <div class="glass-light rounded-xl p-2"><div class="text-xs text-slate-500">5-Day Total</div><div class="font-bold text-xl text-rose-300">13</div><div class="text-xs text-slate-500">units</div></div>
+              <div class="glass-light rounded-xl p-2"><div class="text-xs text-slate-500">EMA (guarded)</div><div class="font-bold text-xl text-rose-300">~0.8</div></div>
+              <div class="glass-light rounded-xl p-2"><div class="text-xs text-slate-500">Bulk spikes</div><div class="font-bold text-xs text-amber-300 mt-1">Unforecastable*</div></div>
+            </div>
+            <p class="text-xs text-slate-500">*Bulk order days are handled via safety stock buffer — not individual-day prediction.</p>
+          </div>
+        </div>
+
+        <div>
+          <div class="glass rounded-3xl p-6">
+            <div class="text-sm font-semibold mb-1">ORS Sachet — Actual Sales vs. EMA (Spike-Guarded)</div>
+            <div class="text-xs text-slate-500 mb-4">Red bars = spike days intercepted by guard. EMA line stays protected.</div>
+            <div style="position:relative;height:240px"><canvas id="scatteredChart"></canvas></div>
+            <div class="flex gap-4 mt-4 justify-center text-xs flex-wrap">
+              <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded bg-brand-400/70"></div><span class="text-slate-400">Normal days</span></div>
+              <div class="flex items-center gap-1.5"><div class="w-3 h-3 rounded bg-red-400/80"></div><span class="text-slate-400">Spike days (capped)</span></div>
+              <div class="flex items-center gap-1.5"><div class="w-4 h-0.5 bg-teal-400"></div><span class="text-slate-400">EMA (spike-guarded)</span></div>
+            </div>
+          </div>
+          <div class="glass rounded-2xl p-5 mt-5">
+            <div class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">5-Day Conservative Forecast</div>
+            <div class="grid grid-cols-5 gap-2 text-center mb-3">
+              <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">+1</div><div class="font-bold text-rose-300">3</div></div>
+              <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">+2</div><div class="font-bold text-rose-300">2</div></div>
+              <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">+3</div><div class="font-bold text-rose-300">3</div></div>
+              <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">+4</div><div class="font-bold text-rose-300">2</div></div>
+              <div class="glass-light rounded-lg p-2"><div class="text-xs text-slate-500">+5</div><div class="font-bold text-rose-300">3</div></div>
+            </div>
+            <p class="text-xs text-slate-500">Engine stays conservative — it cannot predict when the next bulk order arrives. Spike protection prevents runaway over-ordering on quiet days.</p>
+          </div>
+        </div>
+      </div>
+    </div><!-- /panel 3 -->
+
   </div>
 </section>
 
@@ -1958,6 +2257,193 @@ new Chart(emaCtx, {
     animation: { duration: 1000 }
   }
 });
+
+/* ── SKU Tab Switching + Lazy Chart Init ───────────────────── */
+(function () {
+  const tabs   = document.querySelectorAll('.sku-tab');
+  const panels = document.querySelectorAll('.sku-panel');
+  const inited = {};
+
+  function showPanel(idx) {
+    panels.forEach(p => {
+      p.style.display = p.dataset.panel === idx ? '' : 'none';
+    });
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.tab === idx));
+    if (!inited[idx]) {
+      inited[idx] = true;
+      if (idx === '1') initSlowChart();
+      if (idx === '2') initSeasonalChart();
+      if (idx === '3') initScatteredChart();
+    }
+  }
+
+  tabs.forEach(btn => btn.addEventListener('click', () => showPanel(btn.dataset.tab)));
+})();
+
+/* ── Slow-Moving Chart ─────────────────────────────────────── */
+function initSlowChart() {
+  const ctx = document.getElementById('slowChart');
+  if (!ctx) return;
+  const sales = [0,0,2,0,0,1,0,0,3,0,0,0,1,0,2,0,0,0,1,0];
+  const labels = sales.map((_,i) => 'D'+(i+1));
+  // EMA with α=0.30, starting at 0
+  let ema = 0;
+  const emaVals = sales.map(v => {
+    ema = 0.3 * v + 0.7 * ema;
+    return parseFloat(ema.toFixed(2));
+  });
+  const barColors = sales.map(v => v > 0 ? 'rgba(251,191,36,0.75)' : 'rgba(100,116,139,0.3)');
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Daily Sales',
+          data: sales,
+          backgroundColor: barColors,
+          borderColor: sales.map(v => v > 0 ? '#f59e0b' : 'rgba(100,116,139,0.4)'),
+          borderWidth: 1, borderRadius: 4, order: 2,
+        },
+        {
+          label: 'EMA',
+          data: emaVals,
+          type: 'line',
+          borderColor: '#2dd4bf',
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          pointRadius: 2,
+          pointBackgroundColor: '#2dd4bf',
+          tension: 0.4,
+          order: 1,
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(15,15,25,.92)', borderColor: 'rgba(45,212,191,.3)', borderWidth:1 } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,.03)' }, ticks: { font: { size: 9 } } },
+        y: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { font: { size: 9 } }, min: 0, max: 4 }
+      },
+      animation: { duration: 900 }
+    }
+  });
+}
+
+/* ── Seasonal Chart ────────────────────────────────────────── */
+function initSeasonalChart() {
+  const ctx = document.getElementById('seasonalChart');
+  if (!ctx) return;
+  // 28 historical days — rising demand with weekly Fri/Sat peaks
+  const hist = [4,3,5,4,7,6,6, 7,8,9,8,12,11,11, 13,14,14,15,18,17,17, 19,20,20,21,24,23,25];
+  // 5-day forecast (continuing from day 28)
+  const fc   = [27, 29, 30, 34, 38];
+  const allLabels = hist.map((_,i) => 'D'+(i+1)).concat(['D29','D30','D31 Fri','D32 Sat','D33']);
+
+  const gradH = ctx.getContext('2d').createLinearGradient(0, 0, 0, 240);
+  gradH.addColorStop(0, 'rgba(45,212,191,0.35)');
+  gradH.addColorStop(1, 'rgba(45,212,191,0)');
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: allLabels,
+      datasets: [
+        {
+          label: 'Historical',
+          data: [...hist, null, null, null, null, null],
+          borderColor: '#2dd4bf',
+          backgroundColor: gradH,
+          borderWidth: 2.5,
+          pointRadius: 2,
+          pointBackgroundColor: '#2dd4bf',
+          tension: 0.4,
+          fill: true,
+        },
+        {
+          label: 'AI Forecast',
+          data: [...hist.map((_,i) => i < hist.length - 1 ? null : hist[hist.length-1]), ...fc],
+          borderColor: '#a78bfa',
+          backgroundColor: 'transparent',
+          borderWidth: 2.5,
+          borderDash: [5, 4],
+          pointRadius: [0,...new Array(hist.length-1).fill(0), 4,...new Array(fc.length).fill(5)].slice(0),
+          pointBackgroundColor: '#a78bfa',
+          tension: 0.4,
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: 'rgba(15,15,25,.92)', borderColor: 'rgba(45,212,191,.3)', borderWidth:1 } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,.03)' }, ticks: { font: { size: 9 }, maxTicksLimit: 10 } },
+        y: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { font: { size: 9 } }, min: 0, max: 45 }
+      },
+      animation: { duration: 1000 }
+    }
+  });
+}
+
+/* ── Scattered / Erratic Chart ─────────────────────────────── */
+function initScatteredChart() {
+  const ctx = document.getElementById('scatteredChart');
+  if (!ctx) return;
+  const sales = [2, 0, 25, 1, 0, 0, 22, 3, 0, 1, 0, 28, 0, 2, 1];
+  const spikeDays = new Set([2, 6, 11]); // 0-indexed
+  const labels = sales.map((_,i) => 'D'+(i+1));
+
+  // Compute spike-guarded EMA
+  let ema = 2.0;
+  const emaVals = sales.map((v, i) => {
+    const cap = 1.8 * ema;
+    const used = v > cap ? cap : v;
+    ema = parseFloat((0.3 * used + 0.7 * ema).toFixed(3));
+    return ema;
+  });
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Daily Sales',
+          data: sales,
+          backgroundColor: sales.map((_, i) => spikeDays.has(i) ? 'rgba(239,68,68,0.75)' : 'rgba(99,102,241,0.65)'),
+          borderColor:      sales.map((_, i) => spikeDays.has(i) ? '#ef4444' : '#6366f1'),
+          borderWidth: 1, borderRadius: 4, order: 2,
+        },
+        {
+          label: 'EMA (spike-guarded)',
+          data: emaVals,
+          type: 'line',
+          borderColor: '#2dd4bf',
+          backgroundColor: 'transparent',
+          borderWidth: 2.5,
+          pointRadius: 3,
+          pointBackgroundColor: '#2dd4bf',
+          tension: 0.4,
+          order: 1,
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        backgroundColor: 'rgba(15,15,25,.92)', borderColor: 'rgba(239,68,68,.3)', borderWidth: 1,
+        callbacks: { label: ctx => ` ${ctx.dataset.label}: ${parseFloat(ctx.parsed.y).toFixed(2)}` }
+      } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,.03)' }, ticks: { font: { size: 9 } } },
+        y: { grid: { color: 'rgba(255,255,255,.04)' }, ticks: { font: { size: 9 } }, min: 0, max: 32 }
+      },
+      animation: { duration: 900 }
+    }
+  });
+}
 
 /* ── Smooth scroll for nav links ───────────────────────────── */
 document.querySelectorAll('a[href^="#"]').forEach(a => {
