@@ -151,6 +151,17 @@
     html.light .from-teal-900\/20 {
       --tw-gradient-from: rgba(240,253,250,.35) !important;
     }
+    /* Tech stack section dark overlay → transparent in light */
+    html.light .from-slate-900 {
+      --tw-gradient-from: rgba(241,245,249,0) !important;
+    }
+    html.light .to-brand-900\/20 {
+      --tw-gradient-to: rgba(238,242,255,0) !important;
+    }
+
+    /* Tech stack card headers — explicit strong color */
+    html.light .tech-title { color: #0f172a !important; font-weight: 700; }
+    html.light .tech-sub   { color: #64748b !important; }
 
     /* ════════════════════════════════════════════════════
        LIGHT-MODE BORDER OVERRIDES
@@ -1424,7 +1435,7 @@
           <div class="w-10 h-10 rounded-xl bg-blue-500/15 flex items-center justify-center">
             <svg viewBox="0 0 24 24" class="w-6 h-6 fill-blue-400"><path d="M14.25 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.75L14.25 2z"/></svg>
           </div>
-          <div><div class="font-semibold">Python 3.11</div><div class="text-xs text-slate-500">Core runtime</div></div>
+          <div><div class="font-semibold tech-title">Python 3.11</div><div class="text-xs text-slate-500 tech-sub">Core runtime</div></div>
         </div>
         <p class="text-xs text-slate-400 leading-relaxed">The entire engine — data loading, modelling, and database writes — runs as a single Python process. Designed for Python 3.10 or 3.11.</p>
       </div>
@@ -1432,7 +1443,7 @@
       <div class="glass rounded-2xl p-6 lift">
         <div class="flex items-center gap-3 mb-4">
           <div class="w-10 h-10 rounded-xl bg-green-500/15 flex items-center justify-center text-lg">🐼</div>
-          <div><div class="font-semibold">Pandas</div><div class="text-xs text-slate-500">Data wrangling</div></div>
+          <div><div class="font-semibold tech-title">Pandas</div><div class="text-xs text-slate-500 tech-sub">Data wrangling</div></div>
         </div>
         <p class="text-xs text-slate-400 leading-relaxed">All sales data is represented as time-indexed Pandas Series. Daily resampling, gap filling, and rolling windows are Pandas native operations.</p>
       </div>
@@ -1440,7 +1451,7 @@
       <div class="glass rounded-2xl p-6 lift">
         <div class="flex items-center gap-3 mb-4">
           <div class="w-10 h-10 rounded-xl bg-brand-500/15 flex items-center justify-center text-lg">📈</div>
-          <div><div class="font-semibold">statsmodels</div><div class="text-xs text-slate-500">SARIMA engine</div></div>
+          <div><div class="font-semibold tech-title">statsmodels</div><div class="text-xs text-slate-500 tech-sub">SARIMA engine</div></div>
         </div>
         <p class="text-xs text-slate-400 leading-relaxed">SARIMAX from statsmodels fits the seasonal ARIMA model. pmdarima's auto_arima automatically selects the best p,d,q parameters per SKU.</p>
       </div>
@@ -1448,7 +1459,7 @@
       <div class="glass rounded-2xl p-6 lift">
         <div class="flex items-center gap-3 mb-4">
           <div class="w-10 h-10 rounded-xl bg-orange-500/15 flex items-center justify-center text-lg">🤖</div>
-          <div><div class="font-semibold">scikit-learn</div><div class="text-xs text-slate-500">ML layer</div></div>
+          <div><div class="font-semibold tech-title">scikit-learn</div><div class="text-xs text-slate-500 tech-sub">ML layer</div></div>
         </div>
         <p class="text-xs text-slate-400 leading-relaxed">The optional ML layer uses scikit-learn compatible classifier and regressor models. Any sklearn-compatible model can be plugged in without code changes.</p>
       </div>
@@ -1456,7 +1467,7 @@
       <div class="glass rounded-2xl p-6 lift">
         <div class="flex items-center gap-3 mb-4">
           <div class="w-10 h-10 rounded-xl bg-teal-500/15 flex items-center justify-center text-lg">🗄️</div>
-          <div><div class="font-semibold">SQLAlchemy + MySQL</div><div class="text-xs text-slate-500">Persistence layer</div></div>
+          <div><div class="font-semibold tech-title">SQLAlchemy + MySQL</div><div class="text-xs text-slate-500 tech-sub">Persistence layer</div></div>
         </div>
         <p class="text-xs text-slate-400 leading-relaxed">All reads and writes go through SQLAlchemy with connection pooling. Bulk upserts write 5,000 rows per batch. Production uses an SSH tunnel via sshtunnel.</p>
       </div>
@@ -1464,7 +1475,7 @@
       <div class="glass rounded-2xl p-6 lift">
         <div class="flex items-center gap-3 mb-4">
           <div class="w-10 h-10 rounded-xl bg-slate-500/15 flex items-center justify-center text-lg">⏱️</div>
-          <div><div class="font-semibold">Cron / systemd</div><div class="text-xs text-slate-500">Scheduling</div></div>
+          <div><div class="font-semibold tech-title">Cron / systemd</div><div class="text-xs text-slate-500 tech-sub">Scheduling</div></div>
         </div>
         <p class="text-xs text-slate-400 leading-relaxed">The engine runs as a scheduled daily job. All writes are upsert-safe — re-running any time is safe and will overwrite the existing forecast for the same date.</p>
       </div>
