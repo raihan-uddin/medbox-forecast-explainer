@@ -34,148 +34,315 @@
     }
   </script>
   <style>
-    /* ── CSS variables — dark (default) ────────────────── */
+    /* ════════════════════════════════════════════════════
+       CSS CUSTOM PROPERTIES
+    ════════════════════════════════════════════════════ */
     :root {
-      --bg:        #0a0a0f;
-      --bg2:       #0f0f1a;
-      --surface:   rgba(255,255,255,.04);
-      --surface2:  rgba(255,255,255,.07);
-      --border:    rgba(255,255,255,.08);
-      --border2:   rgba(255,255,255,.12);
-      --text:      #e2e8f0;
-      --text-muted:#94a3b8;
-      --text-dim:  #64748b;
+      --bg:           #0a0a0f;
+      --bg2:          #0f0f1a;
+      --surface:      rgba(255,255,255,.04);
+      --surface2:     rgba(255,255,255,.07);
+      --border:       rgba(255,255,255,.08);
+      --border2:      rgba(255,255,255,.12);
+      --border-div:   rgba(255,255,255,.05);
+      --text:         #e2e8f0;
+      --text-muted:   #94a3b8;
+      --text-dim:     #64748b;
+      --text-strong:  #f1f5f9;
+      --text-code-v:  #a5b4fc; /* brand-300  */
+      --text-code-t:  #5eead4; /* teal-300   */
+      --text-code-a:  #fcd34d; /* amber-300  */
+      --text-code-p:  #c4b5fd; /* purple-300 */
+      --text-code-g:  #86efac; /* green-300  */
       --scrollbar-bg: #0a0a0f;
-      --nav-hover: rgba(255,255,255,.06);
+      --nav-hover:    rgba(255,255,255,.06);
+      --tooltip-bg:   rgba(15,15,25,0.92);
+      --tooltip-bd:   rgba(99,102,241,0.3);
     }
 
-    /* ── CSS variables — light ──────────────────────────── */
     html.light {
-      --bg:        #f8fafc;
-      --bg2:       #f1f5f9;
-      --surface:   rgba(255,255,255,.75);
-      --surface2:  rgba(255,255,255,.90);
-      --border:    rgba(0,0,0,.08);
-      --border2:   rgba(0,0,0,.12);
-      --text:      #0f172a;
-      --text-muted:#475569;
-      --text-dim:  #94a3b8;
-      --scrollbar-bg: #f1f5f9;
-      --nav-hover: rgba(0,0,0,.05);
+      --bg:           #f4f6fb;
+      --bg2:          #eef1f8;
+      --surface:      rgba(255,255,255,.85);
+      --surface2:     rgba(255,255,255,.95);
+      --border:       rgba(99,102,241,.12);
+      --border2:      rgba(99,102,241,.18);
+      --border-div:   rgba(0,0,0,.07);
+      --text:         #0f172a;
+      --text-muted:   #475569;
+      --text-dim:     #64748b;
+      --text-strong:  #0f172a;
+      --text-code-v:  #4338ca; /* darker brand */
+      --text-code-t:  #0d9488; /* darker teal  */
+      --text-code-a:  #b45309; /* darker amber */
+      --text-code-p:  #7c3aed; /* darker purple*/
+      --text-code-g:  #15803d; /* darker green */
+      --scrollbar-bg: #eef1f8;
+      --nav-hover:    rgba(99,102,241,.07);
+      --tooltip-bg:   rgba(255,255,255,0.97);
+      --tooltip-bd:   rgba(99,102,241,0.25);
     }
 
-    /* ── base ───────────────────────────────────────────── */
+    /* ════════════════════════════════════════════════════
+       BASE
+    ════════════════════════════════════════════════════ */
     html { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-    body { background: var(--bg); color: var(--text); transition: background .3s, color .3s; }
+    body { background:var(--bg); color:var(--text); transition:background .35s, color .35s; }
+    html.light body { background: linear-gradient(135deg,#eef2ff 0%,#f4f6fb 45%,#f0fdf9 100%); }
 
-    /* ── gradient text ──────────────────────────────────── */
-    .gradient-text { background: linear-gradient(135deg,#818cf8 0%,#2dd4bf 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
-    .gradient-text-warm { background: linear-gradient(135deg,#f59e0b 0%,#ef4444 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
-
-    /* ── glass card ─────────────────────────────────────── */
-    .glass       { background: var(--surface);  border: 1px solid var(--border);  backdrop-filter:blur(12px); transition: background .3s, border .3s; }
-    .glass-light { background: var(--surface2); border: 1px solid var(--border2); backdrop-filter:blur(12px); transition: background .3s, border .3s; }
-
-    /* light-mode card shadow instead of dark-glass effect */
-    html.light .glass       { box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04); }
-    html.light .glass-light { box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 4px 16px rgba(0,0,0,.06); }
-
-    /* ── text overrides for light ───────────────────────── */
+    /* ════════════════════════════════════════════════════
+       COMPREHENSIVE LIGHT-MODE TEXT FIXES
+    ════════════════════════════════════════════════════ */
+    /* Tailwind utility overrides */
+    html.light .text-white     { color: #0f172a !important; }
+    html.light .text-slate-300 { color: #1e293b !important; }
     html.light .text-slate-400 { color: #475569 !important; }
     html.light .text-slate-500 { color: #64748b !important; }
-    html.light .text-slate-300 { color: #1e293b !important; }
     html.light .text-slate-600 { color: #334155 !important; }
-    html.light .text-white     { color: #0f172a !important; }
 
-    /* ── hero particles ─────────────────────────────────── */
+    /* accent / code colors → dark variants for readability */
+    html.light .text-brand-300  { color: var(--text-code-v) !important; }
+    html.light .text-brand-400  { color: #4f46e5 !important; }
+    html.light .text-teal-300   { color: var(--text-code-t) !important; }
+    html.light .text-teal-400   { color: #0d9488 !important; }
+    html.light .text-amber-300  { color: var(--text-code-a) !important; }
+    html.light .text-amber-400  { color: #b45309 !important; }
+    html.light .text-amber-500  { color: #92400e !important; }
+    html.light .text-purple-300 { color: var(--text-code-p) !important; }
+    html.light .text-purple-400 { color: #7c3aed !important; }
+    html.light .text-green-300  { color: var(--text-code-g) !important; }
+    html.light .text-green-400  { color: #16a34a !important; }
+    html.light .text-green-500  { color: #15803d !important; }
+    html.light .text-red-400    { color: #dc2626 !important; }
+    html.light .text-blue-400   { color: #2563eb !important; }
+
+    /* ════════════════════════════════════════════════════
+       LIGHT-MODE BACKGROUND OVERRIDES
+    ════════════════════════════════════════════════════ */
+    /* dark semi-transparent card backgrounds → pastel equivalents */
+    html.light [class*="bg-brand-900"] { background: rgba(99,102,241,.07)  !important; }
+    html.light [class*="bg-teal-900"]  { background: rgba(20,184,166,.07)  !important; }
+    html.light [class*="bg-purple-900"]{ background: rgba(168,85,247,.07)  !important; }
+    html.light [class*="bg-amber-900"] { background: rgba(245,158,11,.07)  !important; }
+    html.light [class*="bg-red-900"]   { background: rgba(239,68,68,.07)   !important; }
+    html.light [class*="bg-rose-900"]  { background: rgba(244,63,94,.07)   !important; }
+    html.light [class*="bg-slate-900"] { background: rgba(248,250,252,1)   !important; }
+
+    /* icon container backgrounds */
+    html.light .bg-brand-500\/20  { background: rgba(99,102,241,.10)  !important; }
+    html.light .bg-brand-500\/15  { background: rgba(99,102,241,.10)  !important; }
+    html.light .bg-teal-500\/20   { background: rgba(20,184,166,.10)  !important; }
+    html.light .bg-teal-500\/15   { background: rgba(20,184,166,.10)  !important; }
+    html.light .bg-purple-500\/20 { background: rgba(168,85,247,.10)  !important; }
+    html.light .bg-amber-500\/20  { background: rgba(245,158,11,.10)  !important; }
+    html.light .bg-rose-500\/20   { background: rgba(239,68,68,.10)   !important; }
+    html.light .bg-green-500\/20  { background: rgba(34,197,94,.10)   !important; }
+    html.light .bg-blue-500\/15   { background: rgba(59,130,246,.10)  !important; }
+    html.light .bg-orange-500\/15 { background: rgba(249,115,22,.10)  !important; }
+    html.light .bg-slate-500\/15  { background: rgba(100,116,139,.10) !important; }
+
+    /* gradient-from overrides for section tint overlays */
+    html.light .from-brand-900\/30, html.light .from-brand-900\/20 {
+      --tw-gradient-from: rgba(238,242,255,.35) !important;
+    }
+    html.light .from-amber-900\/10 {
+      --tw-gradient-from: rgba(255,251,235,.5) !important;
+    }
+    html.light .from-teal-900\/20 {
+      --tw-gradient-from: rgba(240,253,250,.35) !important;
+    }
+
+    /* ════════════════════════════════════════════════════
+       LIGHT-MODE BORDER OVERRIDES
+    ════════════════════════════════════════════════════ */
+    html.light .border-white\/5  { border-color: rgba(0,0,0,.06) !important; }
+    html.light .border-white\/10 { border-color: rgba(0,0,0,.08) !important; }
+    html.light .divide-white\/5 > * + * { border-color: rgba(0,0,0,.06) !important; }
+    html.light nav.glass { border-bottom-color: rgba(99,102,241,.12) !important; }
+    html.light footer { border-top-color: rgba(0,0,0,.07) !important; }
+
+    /* ════════════════════════════════════════════════════
+       GRADIENT TEXT
+    ════════════════════════════════════════════════════ */
+    .gradient-text      { background:linear-gradient(135deg,#818cf8 0%,#2dd4bf 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .gradient-text-warm { background:linear-gradient(135deg,#f59e0b 0%,#ef4444 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+
+    /* ════════════════════════════════════════════════════
+       GLASS CARDS
+    ════════════════════════════════════════════════════ */
+    .glass       { background:var(--surface);  border:1px solid var(--border);  backdrop-filter:blur(14px); transition:background .35s, border .35s, box-shadow .35s; }
+    .glass-light { background:var(--surface2); border:1px solid var(--border2); backdrop-filter:blur(14px); transition:background .35s, border .35s, box-shadow .35s; }
+    html.light .glass       { box-shadow:0 1px 4px rgba(0,0,0,.05), 0 6px 20px rgba(99,102,241,.06); }
+    html.light .glass-light { box-shadow:0 1px 4px rgba(0,0,0,.07), 0 6px 20px rgba(99,102,241,.08); }
+
+    /* ════════════════════════════════════════════════════
+       PARTICLES / HERO BLOBS
+    ════════════════════════════════════════════════════ */
     .particle { position:absolute; border-radius:50%; animation:float var(--dur,4s) ease-in-out infinite; animation-delay:var(--delay,0s); opacity:.25; }
-    html.light .particle { opacity:.12; }
+    html.light .particle { opacity:.10; }
 
-    /* ── section fade-in on scroll ──────────────────────── */
-    .reveal { opacity:0; transform:translateY(40px); transition:opacity .7s ease, transform .7s ease; }
+    /* ════════════════════════════════════════════════════
+       SCROLL REVEAL
+    ════════════════════════════════════════════════════ */
+    .reveal { opacity:0; transform:translateY(44px); transition:opacity .7s ease, transform .7s ease; }
     .reveal.visible { opacity:1; transform:translateY(0); }
 
-    /* ── pipeline arrow ─────────────────────────────────── */
+    /* staggered children inside .reveal-stagger */
+    .reveal-stagger > * { opacity:0; transform:translateY(30px); transition:opacity .6s ease, transform .6s ease; }
+    .reveal-stagger.visible > *:nth-child(1) { opacity:1; transform:none; transition-delay:.0s; }
+    .reveal-stagger.visible > *:nth-child(2) { opacity:1; transform:none; transition-delay:.1s; }
+    .reveal-stagger.visible > *:nth-child(3) { opacity:1; transform:none; transition-delay:.2s; }
+    .reveal-stagger.visible > *:nth-child(4) { opacity:1; transform:none; transition-delay:.3s; }
+
+    /* ════════════════════════════════════════════════════
+       PIPELINE / CONNECTORS
+    ════════════════════════════════════════════════════ */
     .pipeline-arrow { width:2px; height:36px; background:linear-gradient(to bottom,#6366f1,#2dd4bf); margin:0 auto; position:relative; }
     .pipeline-arrow::after { content:''; position:absolute; bottom:-6px; left:50%; transform:translateX(-50%); border-left:5px solid transparent; border-right:5px solid transparent; border-top:8px solid #2dd4bf; }
-
-    /* ── step connector ─────────────────────────────────── */
     .step-line { width:2px; height:48px; background:linear-gradient(to bottom,#4f46e5,#14b8a6); margin:0 auto; }
 
-    /* ── animated dots on flow ──────────────────────────── */
-    @keyframes travel { 0%{ top:0; opacity:0 } 10%{ opacity:1 } 90%{ opacity:1 } 100%{ top:100%; opacity:0 } }
+    /* ════════════════════════════════════════════════════
+       ANIMATED DOTS
+    ════════════════════════════════════════════════════ */
+    @keyframes travel { 0%{top:0;opacity:0} 10%{opacity:1} 90%{opacity:1} 100%{top:100%;opacity:0} }
     .dot-travel { position:absolute; width:6px; height:6px; border-radius:50%; background:#818cf8; left:50%; transform:translateX(-50%); animation:travel 2s linear infinite; }
 
-    /* ── SARIMA badge ───────────────────────────────────── */
+    /* ════════════════════════════════════════════════════
+       BADGES
+    ════════════════════════════════════════════════════ */
     .sarima-badge { display:inline-flex; align-items:center; gap:6px; padding:4px 14px; border-radius:999px; font-size:.75rem; font-weight:600; letter-spacing:.04em; }
 
-    /* ── hover lift ─────────────────────────────────────── */
-    .lift { transition:transform .25s ease, box-shadow .25s ease; }
-    .lift:hover { transform:translateY(-4px); box-shadow:0 20px 40px rgba(99,102,241,.18); }
-    html.light .lift:hover { box-shadow:0 12px 32px rgba(99,102,241,.15); }
-
-    /* ── nav pill ───────────────────────────────────────── */
-    .nav-pill { padding:6px 16px; border-radius:999px; font-size:.8rem; font-weight:500; transition:all .2s; color: var(--text-muted); }
-    .nav-pill:hover { color: var(--text); background: var(--nav-hover); }
-    .nav-pill.active { color:#fff; background:#4f46e5; }
-
-    /* ── chart container ────────────────────────────────── */
-    .chart-wrap { position:relative; height:280px; }
-
-    /* ── glow ring ──────────────────────────────────────── */
-    .glow-ring { box-shadow:0 0 0 1px rgba(99,102,241,.3), 0 0 24px rgba(99,102,241,.15); }
-    html.light .glow-ring { box-shadow:0 0 0 1px rgba(99,102,241,.25), 0 0 16px rgba(99,102,241,.1); }
-
-    /* ── scrollbar ──────────────────────────────────────── */
-    ::-webkit-scrollbar { width:6px; }
-    ::-webkit-scrollbar-track { background: var(--scrollbar-bg); }
-    ::-webkit-scrollbar-thumb { background:#4f46e5; border-radius:3px; }
-
-    /* ── animated underline ─────────────────────────────── */
-    .anim-underline { position:relative; }
-    .anim-underline::after { content:''; position:absolute; bottom:-2px; left:0; width:0; height:2px; background:linear-gradient(90deg,#6366f1,#2dd4bf); transition:width .4s ease; }
-    .anim-underline:hover::after { width:100%; }
-
-    /* ── velocity chips ─────────────────────────────────── */
-    .vel-dead   { background:rgba(239,68,68,.15);  color:#ef4444; border:1px solid rgba(239,68,68,.3); }
-    .vel-slow   { background:rgba(245,158,11,.12); color:#d97706; border:1px solid rgba(245,158,11,.3); }
-    .vel-medium { background:rgba(59,130,246,.12); color:#2563eb; border:1px solid rgba(59,130,246,.3); }
-    .vel-fast   { background:rgba(34,197,94,.12);  color:#16a34a; border:1px solid rgba(34,197,94,.3); }
+    /* velocity chips — shared base */
+    .vel-dead   { background:rgba(239,68,68,.12);  color:#dc2626; border:1px solid rgba(239,68,68,.25); }
+    .vel-slow   { background:rgba(245,158,11,.10); color:#b45309; border:1px solid rgba(245,158,11,.25); }
+    .vel-medium { background:rgba(59,130,246,.10); color:#2563eb; border:1px solid rgba(59,130,246,.25); }
+    .vel-fast   { background:rgba(34,197,94,.10);  color:#15803d; border:1px solid rgba(34,197,94,.25); }
     html.dark .vel-dead   { color:#f87171; }
     html.dark .vel-slow   { color:#fbbf24; }
     html.dark .vel-medium { color:#60a5fa; }
     html.dark .vel-fast   { color:#4ade80; }
 
-    /* ── number counter ─────────────────────────────────── */
-    @keyframes countUp { from { opacity:0; transform:scale(.8); } to { opacity:1; transform:scale(1); } }
-    .count-badge { animation:countUp .5s ease forwards; }
+    /* ════════════════════════════════════════════════════
+       HOVER LIFT
+    ════════════════════════════════════════════════════ */
+    .lift { transition:transform .25s ease, box-shadow .25s ease; }
+    .lift:hover { transform:translateY(-5px); box-shadow:0 20px 40px rgba(99,102,241,.22); }
+    html.light .lift:hover { box-shadow:0 10px 30px rgba(99,102,241,.14); }
 
-    /* ── table ──────────────────────────────────────────── */
-    .param-table th { font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color: var(--text-dim); }
+    /* ════════════════════════════════════════════════════
+       NAV
+    ════════════════════════════════════════════════════ */
+    .nav-pill { padding:6px 16px; border-radius:999px; font-size:.8rem; font-weight:500; transition:all .2s; color:var(--text-muted); }
+    .nav-pill:hover { color:var(--text); background:var(--nav-hover); }
+    .nav-pill.active { color:#fff; background:#4f46e5; }
+
+    /* ════════════════════════════════════════════════════
+       MISC UTILITIES
+    ════════════════════════════════════════════════════ */
+    .chart-wrap { position:relative; height:280px; }
+    .glow-ring  { box-shadow:0 0 0 1px rgba(99,102,241,.3), 0 0 24px rgba(99,102,241,.15); }
+    html.light .glow-ring { box-shadow:0 0 0 1px rgba(99,102,241,.2), 0 0 16px rgba(99,102,241,.08); }
+
+    ::-webkit-scrollbar { width:6px; }
+    ::-webkit-scrollbar-track  { background:var(--scrollbar-bg); }
+    ::-webkit-scrollbar-thumb  { background:#4f46e5; border-radius:3px; }
+
+    .anim-underline { position:relative; }
+    .anim-underline::after { content:''; position:absolute; bottom:-2px; left:0; width:0; height:2px; background:linear-gradient(90deg,#6366f1,#2dd4bf); transition:width .4s ease; }
+    .anim-underline:hover::after { width:100%; }
+
+    .param-table th { font-size:.7rem; letter-spacing:.06em; text-transform:uppercase; color:var(--text-dim); }
     .param-table td { font-size:.85rem; }
 
-    /* ── dark-only section tints ────────────────────────── */
-    html.light .bg-brand-900\/30  { background: rgba(238,242,255,.6)  !important; }
-    html.light .bg-amber-900\/10  { background: rgba(255,251,235,.5)  !important; }
-    html.light .bg-teal-900\/30   { background: rgba(240,253,250,.6)  !important; }
-    html.light .bg-slate-900      { background: #f8fafc !important; }
-
-    /* ── theme toggle button ────────────────────────────── */
+    /* ════════════════════════════════════════════════════
+       THEME TOGGLE
+    ════════════════════════════════════════════════════ */
     #themeToggle { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; cursor:pointer; border:1px solid var(--border); background:var(--surface); transition:all .25s; flex-shrink:0; }
-    #themeToggle:hover { background:var(--surface2); }
+    #themeToggle:hover { background:var(--surface2); transform:rotate(20deg); }
     #themeToggle .icon-sun  { display:none; }
     #themeToggle .icon-moon { display:block; }
     html.light #themeToggle .icon-sun  { display:block; }
     html.light #themeToggle .icon-moon { display:none; }
 
-    /* ── light hero bg ──────────────────────────────────── */
-    html.light body { background: linear-gradient(135deg, #f0f4ff 0%, #f8fafc 50%, #f0fdf9 100%); }
+    /* ════════════════════════════════════════════════════
+       NEW ANIMATIONS
+    ════════════════════════════════════════════════════ */
 
-    /* ── keyframes ──────────────────────────────────────── */
-    @keyframes float   { 0%,100%{ transform:translateY(0) } 50%{ transform:translateY(-12px) } }
-    @keyframes slideUp { from{ opacity:0; transform:translateY(30px) } to{ opacity:1; transform:translateY(0) } }
-    @keyframes flow    { 0%,100%{ opacity:.4 } 50%{ opacity:1 } }
-    @keyframes dash    { to{ stroke-dashoffset:-20 } }
+    /* 1. floating blobs */
+    @keyframes float   { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-14px) scale(1.03)} }
+
+    /* 2. slide-up entry */
+    @keyframes slideUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+
+    /* 3. flow pulse */
+    @keyframes flow    { 0%,100%{opacity:.4} 50%{opacity:1} }
+
+    /* 4. svg dash */
+    @keyframes dash    { to{stroke-dashoffset:-20} }
+
+    /* 5. dot travel */
+    @keyframes travel  { 0%{top:0;opacity:0} 10%{opacity:1} 90%{opacity:1} 100%{top:100%;opacity:0} }
+
+    /* 6. shimmer sweep — for stat cards */
+    @keyframes shimmer { 0%{background-position:-200% center} 100%{background-position:200% center} }
+    .shimmer-card {
+      position:relative; overflow:hidden;
+    }
+    .shimmer-card::after {
+      content:''; position:absolute; inset:0;
+      background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.07) 50%,transparent 60%);
+      background-size:200% 100%;
+      animation:shimmer 3s ease-in-out infinite;
+    }
+    html.light .shimmer-card::after {
+      background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.5) 50%,transparent 60%);
+      background-size:200% 100%;
+    }
+
+    /* 7. gradient border pulse on featured cards */
+    @keyframes borderPulse { 0%,100%{box-shadow:0 0 0 1px rgba(99,102,241,.3)} 50%{box-shadow:0 0 0 2px rgba(45,212,191,.5), 0 0 20px rgba(45,212,191,.12)} }
+    .border-pulse { animation:borderPulse 3s ease-in-out infinite; }
+
+    /* 8. bounce-in for icons */
+    @keyframes bounceIn { 0%{transform:scale(0.6);opacity:0} 60%{transform:scale(1.15);opacity:1} 80%{transform:scale(0.95)} 100%{transform:scale(1)} }
+    .icon-bounce { animation:bounceIn .6s cubic-bezier(.36,.07,.19,.97) both; }
+
+    /* 9. counter number pop */
+    @keyframes numPop { 0%{transform:scale(.7);opacity:0} 70%{transform:scale(1.1)} 100%{transform:scale(1);opacity:1} }
+    .num-pop { animation:numPop .5s cubic-bezier(.36,.07,.19,.97) both; }
+
+    /* 10. typing cursor blink */
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+    .cursor { display:inline-block; width:2px; height:1em; background:currentColor; margin-left:2px; vertical-align:text-bottom; animation:blink .8s step-end infinite; }
+
+    /* 11. ping ring (status dots) */
+    @keyframes ping { 75%,100%{transform:scale(2.2);opacity:0} }
+    .ping-ring { position:relative; }
+    .ping-ring::before { content:''; position:absolute; inset:0; border-radius:50%; background:inherit; animation:ping 1.5s cubic-bezier(0,0,.2,1) infinite; }
+
+    /* 12. horizontal progress bar fill */
+    @keyframes fillBar { from{width:0} to{width:var(--w)} }
+    .bar-fill { height:6px; border-radius:999px; background:linear-gradient(90deg,#6366f1,#2dd4bf); width:0; animation:fillBar 1.2s ease forwards; animation-play-state:paused; }
+    .bar-fill.animate { animation-play-state:running; }
+
+    /* 13. card entrance (scale up) */
+    @keyframes cardIn { from{opacity:0;transform:scale(.94) translateY(20px)} to{opacity:1;transform:none} }
+    .card-in { animation:cardIn .5s cubic-bezier(.22,1,.36,1) both; }
+
+    /* 14. rotating gradient background on hero */
+    @keyframes rotateBg { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+    .hero-gradient-text {
+      background:linear-gradient(135deg,#818cf8,#2dd4bf,#c4b5fd,#818cf8);
+      background-size:300% 300%;
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+      animation:rotateBg 6s ease infinite;
+    }
+
+    /* 15. fade-slide in from left/right */
+    @keyframes slideLeft  { from{opacity:0;transform:translateX(-30px)} to{opacity:1;transform:none} }
+    @keyframes slideRight { from{opacity:0;transform:translateX( 30px)} to{opacity:1;transform:none} }
+    .slide-left  { animation:slideLeft  .6s ease both; }
+    .slide-right { animation:slideRight .6s ease both; }
   </style>
 </head>
 
@@ -262,7 +429,7 @@
     </div>
 
     <h1 class="text-4xl sm:text-6xl font-extrabold leading-tight mb-6">
-      How the <span class="gradient-text">MedBox AI</span><br/>Forecast Engine Works
+      How the <span class="hero-gradient-text">MedBox AI</span><br/>Forecast Engine Works
     </h1>
 
     <p class="text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed">
@@ -271,20 +438,20 @@
     </p>
 
     <!-- hero stat cards -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto mb-12">
-      <div class="glass rounded-2xl p-4 lift">
-        <div class="text-2xl font-bold gradient-text">10k+</div>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto mb-12 reveal-stagger">
+      <div class="glass rounded-2xl p-4 lift shimmer-card">
+        <div class="text-2xl font-bold gradient-text" data-counter="10000" data-suffix="k+">10k+</div>
         <div class="text-xs text-slate-400 mt-1">SKUs Forecast Daily</div>
       </div>
-      <div class="glass rounded-2xl p-4 lift">
-        <div class="text-2xl font-bold gradient-text">5</div>
+      <div class="glass rounded-2xl p-4 lift shimmer-card">
+        <div class="text-2xl font-bold gradient-text" data-counter="5" data-suffix="">5</div>
         <div class="text-xs text-slate-400 mt-1">Days Ahead Predicted</div>
       </div>
-      <div class="glass rounded-2xl p-4 lift">
-        <div class="text-2xl font-bold gradient-text">3</div>
+      <div class="glass rounded-2xl p-4 lift shimmer-card">
+        <div class="text-2xl font-bold gradient-text" data-counter="3" data-suffix="">3</div>
         <div class="text-xs text-slate-400 mt-1">Model Layers Blended</div>
       </div>
-      <div class="glass rounded-2xl p-4 lift">
+      <div class="glass rounded-2xl p-4 lift shimmer-card">
         <div class="text-2xl font-bold gradient-text">24h</div>
         <div class="text-xs text-slate-400 mt-1">Auto-run Cycle</div>
       </div>
@@ -863,8 +1030,23 @@
       <div class="glass rounded-2xl p-6 lift border-t-4 border-purple-500">
         <div class="text-3xl mb-4">⚡</div>
         <h3 class="font-bold mb-2">Step 3 — Blend with Others</h3>
-        <p class="text-sm text-slate-400 leading-relaxed">For fast-moving SKUs, ML contributes <strong class="text-white">20%</strong> of the final forecast. SARIMA contributes 45% and the EMA baseline 35%. This blend prevents any single model from dominating when it might be wrong.</p>
-        <div class="mt-4 text-xs text-slate-500 glass rounded-lg p-3">
+        <p class="text-sm text-slate-400 leading-relaxed mb-4">For fast-moving SKUs, ML contributes <strong class="text-white">20%</strong> of the final forecast. SARIMA contributes 45% and the EMA baseline 35%.</p>
+        <!-- animated weight bars -->
+        <div class="space-y-2 mb-3" id="weightBars">
+          <div>
+            <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">EMA Baseline</span><span class="text-brand-300 font-semibold">35%</span></div>
+            <div class="h-1.5 rounded-full bg-white/5 overflow-hidden"><div class="bar-fill" style="--w:35%"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">SARIMA</span><span class="text-teal-300 font-semibold">45%</span></div>
+            <div class="h-1.5 rounded-full bg-white/5 overflow-hidden"><div class="bar-fill" style="--w:45%;background:linear-gradient(90deg,#14b8a6,#2dd4bf)"></div></div>
+          </div>
+          <div>
+            <div class="flex justify-between text-xs mb-1"><span class="text-slate-400">ML</span><span class="text-purple-300 font-semibold">20%</span></div>
+            <div class="h-1.5 rounded-full bg-white/5 overflow-hidden"><div class="bar-fill" style="--w:20%;background:linear-gradient(90deg,#a855f7,#c4b5fd)"></div></div>
+          </div>
+        </div>
+        <div class="text-xs text-slate-500 glass rounded-lg p-3">
           <strong class="text-purple-400">Only for:</strong> Fast-velocity SKUs (≥ 3 units/day average).
         </div>
       </div>
@@ -1335,30 +1517,101 @@
 /* ── Theme toggle ──────────────────────────────────────────── */
 const html = document.documentElement;
 
-// Persist preference
 const saved = localStorage.getItem('theme');
-if (saved === 'light') html.classList.replace('dark','light');
+if (saved === 'light') { html.classList.replace('dark','light'); }
+
+function getTooltipStyle() {
+  return html.classList.contains('light')
+    ? { bg:'rgba(255,255,255,0.97)', bd:'rgba(99,102,241,0.2)', color:'#0f172a' }
+    : { bg:'rgba(15,15,25,0.92)',    bd:'rgba(99,102,241,0.3)', color:'#e2e8f0' };
+}
 
 function updateChartColors() {
   const isDark = html.classList.contains('dark');
   Chart.defaults.color = isDark ? '#94a3b8' : '#475569';
-  // re-render all registered charts
-  Object.values(Chart.instances).forEach(c => c.update());
+  const t = getTooltipStyle();
+  Object.values(Chart.instances).forEach(c => {
+    if (c.options.plugins?.tooltip) {
+      c.options.plugins.tooltip.backgroundColor = t.bg;
+      c.options.plugins.tooltip.borderColor     = t.bd;
+      c.options.plugins.tooltip.titleColor      = t.color;
+      c.options.plugins.tooltip.bodyColor       = t.color;
+    }
+    if (c.options.scales) {
+      Object.values(c.options.scales).forEach(s => {
+        if (s.grid) s.grid.color = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.05)';
+      });
+    }
+    c.update();
+  });
 }
 
 document.getElementById('themeToggle').addEventListener('click', () => {
   const goLight = html.classList.contains('dark');
-  html.classList.toggle('dark', !goLight);
-  html.classList.toggle('light', goLight);
+  html.classList.toggle('dark',  !goLight);
+  html.classList.toggle('light',  goLight);
   localStorage.setItem('theme', goLight ? 'light' : 'dark');
   updateChartColors();
 });
+
+/* ── Animated number counters ──────────────────────────────── */
+function animateCounter(el) {
+  const target = parseInt(el.dataset.counter, 10);
+  const suffix = el.dataset.suffix || '';
+  const dur = 1200;
+  const start = performance.now();
+  const isLarge = target > 999;
+  function step(now) {
+    const t = Math.min((now - start) / dur, 1);
+    const ease = 1 - Math.pow(1 - t, 3);
+    const val = Math.round(ease * target);
+    el.textContent = isLarge ? Math.round(val / 1000) + suffix : val + suffix;
+    if (t < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+const counterObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting && !e.target.dataset.counted) {
+      e.target.dataset.counted = '1';
+      animateCounter(e.target);
+    }
+  });
+}, { threshold: 0.5 });
+document.querySelectorAll('[data-counter]').forEach(el => counterObs.observe(el));
+
+/* ── Progress bar trigger ──────────────────────────────────── */
+const barObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.querySelectorAll('.bar-fill').forEach((b,i) => {
+        setTimeout(() => b.classList.add('animate'), i * 200);
+      });
+      barObs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.3 });
+const weightBars = document.getElementById('weightBars');
+if (weightBars) barObs.observe(weightBars);
+
+/* ── Icon bounce on section entry ─────────────────────────── */
+const iconObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.querySelectorAll('.icon-bounce-target').forEach((ic, i) => {
+        setTimeout(() => ic.classList.add('icon-bounce'), i * 80);
+      });
+      iconObs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.2 });
+document.querySelectorAll('section').forEach(s => iconObs.observe(s));
 
 /* ── Scroll reveal ─────────────────────────────────────────── */
 const revealObserver = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
 }, { threshold: 0.08 });
-document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+document.querySelectorAll('.reveal, .reveal-stagger').forEach(el => revealObserver.observe(el));
 
 /* ── Flow steps sequential animation ──────────────────────── */
 const flowObs = new IntersectionObserver((entries) => {
@@ -1394,6 +1647,13 @@ sections.forEach(s => navObs.observe(s));
 
 /* ── Chart.js defaults ─────────────────────────────────────── */
 Chart.defaults.color = html.classList.contains('light') ? '#475569' : '#94a3b8';
+const _tt = getTooltipStyle();
+Chart.defaults.plugins = Chart.defaults.plugins || {};
+Chart.defaults.plugins.tooltip = {
+  ...Chart.defaults.plugins.tooltip,
+  backgroundColor: _tt.bg, borderColor: _tt.bd, titleColor: _tt.color, bodyColor: _tt.color,
+  borderWidth: 1, padding: 10,
+};
 Chart.defaults.font.family = '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
 
 /* ── Forecast Chart ────────────────────────────────────────── */
