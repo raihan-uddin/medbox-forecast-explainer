@@ -2274,6 +2274,8 @@ new Chart(emaCtx, {
       if (idx === '1') initSlowChart();
       if (idx === '2') initSeasonalChart();
       if (idx === '3') initScatteredChart();
+      // Apply current theme to newly created chart
+      updateChartColors();
     }
   }
 
@@ -2453,6 +2455,9 @@ document.querySelectorAll('a[href^="#"]').forEach(a => {
     if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 });
+
+/* ── Apply theme to charts on initial page load ────────────── */
+updateChartColors();
 
 /* ── Scroll Progress Bar ───────────────────────────────────── */
 const progressBar = document.getElementById('scroll-progress');
