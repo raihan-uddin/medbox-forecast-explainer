@@ -450,6 +450,7 @@
       <a href="#ema"       class="nav-pill whitespace-nowrap">EMA</a>
       <a href="#sarima"    class="nav-pill whitespace-nowrap">SARIMA</a>
       <a href="#ml"        class="nav-pill whitespace-nowrap">ML Layer</a>
+      <a href="#accuracy"  class="nav-pill whitespace-nowrap">Accuracy</a>
       <a href="#example"   class="nav-pill whitespace-nowrap">Example</a>
       <a href="#impact"    class="nav-pill whitespace-nowrap">Impact</a>
     </div>
@@ -639,7 +640,7 @@
       <div class="glass rounded-2xl p-6 lift">
         <div class="text-3xl mb-4">🔄</div>
         <h3 class="font-bold text-lg mb-2">Self-Learning</h3>
-        <p class="text-slate-400 text-sm leading-relaxed">The engine compares yesterday's forecast to actual sales and automatically adjusts its predictions. It gets smarter every single day.</p>
+        <p class="text-slate-400 text-sm leading-relaxed">The engine compares the last 7 days of forecasts against actual sales and automatically adjusts per-SKU bias. Holt's trend tracking and per-SKU weekday indices further sharpen accuracy every run.</p>
       </div>
       <div class="glass rounded-2xl p-6 lift">
         <div class="text-3xl mb-4">🛡️</div>
@@ -687,7 +688,7 @@
             <span class="text-xl">🧬</span>
             <span class="font-semibold text-sm">AI Memory</span>
           </div>
-          <p class="text-xs text-slate-400 leading-relaxed">Each SKU's stored EMA level, bias correction, velocity class, and last sale date from <code class="text-teal-300 text-[11px]">forecast_models</code>.</p>
+          <p class="text-xs text-slate-400 leading-relaxed">Each SKU's stored EMA level, bias correction, velocity class, last sale date, and <code class="text-teal-300 text-[11px]">trend_factor</code> (Holt's trend) from <code class="text-teal-300 text-[11px]">forecast_models</code>.</p>
         </div>
 
         <div class="glass rounded-2xl p-5 lift border-l-4 border-purple-500">
@@ -706,12 +707,20 @@
           <p class="text-xs text-slate-400 leading-relaxed">Pre-trained ARIMA orders per SKU so the model doesn't re-search from scratch on every run.</p>
         </div>
 
-        <div class="glass rounded-2xl p-5 lift border-l-4 border-rose-500 sm:col-span-2">
+        <div class="glass rounded-2xl p-5 lift border-l-4 border-rose-500">
           <div class="flex items-center gap-3 mb-3">
             <span class="text-xl">⚡</span>
             <span class="font-semibold text-sm">Yesterday's Forecasts</span>
           </div>
-          <p class="text-xs text-slate-400 leading-relaxed">All of yesterday's predicted quantities fetched in a single batch query — used to compute how accurate the last prediction was, so the system can self-correct (bias learning).</p>
+          <p class="text-xs text-slate-400 leading-relaxed">All of yesterday's predicted quantities fetched in a single batch query — used for bias self-correction (actual vs. predicted).</p>
+        </div>
+
+        <div class="glass rounded-2xl p-5 lift border-l-4 border-green-500">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="text-xl">🎯</span>
+            <span class="font-semibold text-sm">Event Uplift Learning</span>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">Past event days' actual <code class="text-green-300 text-[11px]">forecasted_qty</code> used as the denominator for uplift ratio — the accurate baseline, not a stale EMA estimate.</p>
         </div>
       </div>
 
@@ -754,7 +763,7 @@
               <div class="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-lg flex-shrink-0">🧠</div>
               <div>
                 <div class="text-sm font-semibold">Forecast Engine</div>
-                <div class="text-xs text-slate-400">EMA → SARIMA → ML → Blend → Caps</div>
+                <div class="text-xs text-slate-400">EMA+Trend → SARIMA → ML → Confidence Blend → Caps</div>
               </div>
             </div>
 
@@ -836,6 +845,29 @@
             If today's sales are more than <strong class="text-white">1.8×</strong> the previous EMA (a suspected data glitch or bulk order), the system caps the input at <strong class="text-white">1.4×</strong> before updating. This prevents one abnormal day from corrupting weeks of learned memory.
           </p>
         </div>
+
+        <div class="glass rounded-2xl p-6 lift border border-brand-500/20">
+          <h3 class="font-bold mb-3 flex items-center gap-2">📈 Holt's Trend Factor</h3>
+          <p class="text-sm text-slate-400 leading-relaxed mb-3">
+            A second EMA tracks the <strong class="text-white">velocity of change</strong> in demand — whether sales are trending up, flat, or declining. This trend value is added to the rolling EMA before applying multipliers:
+          </p>
+          <div class="glass-light rounded-xl p-3 text-center font-mono text-sm mb-3">
+            <span class="text-brand-300">trend = β × (ema_new − ema_prev) + (1−β) × trend_prev</span>
+          </div>
+          <div class="text-xs text-slate-500">
+            <code class="text-brand-300">TREND_BETA = 0.05</code> — slow-updating to prevent overreaction. Stored in <code class="text-brand-300">trend_factor</code> column of <code class="text-brand-300">forecast_models</code>.
+          </div>
+        </div>
+
+        <div class="glass rounded-2xl p-6 lift border border-teal-500/20">
+          <h3 class="font-bold mb-3 flex items-center gap-2">🛡️ Zero-Day &amp; Closed-Day Protection</h3>
+          <p class="text-sm text-slate-400 leading-relaxed mb-3">
+            EMA is <strong class="text-white">not updated</strong> when the last day had zero sales <em>or</em> was a business closure. This prevents the stored EMA from slowly eroding to zero during holidays or quiet periods — the demand memory is preserved intact for when sales resume.
+          </p>
+          <div class="glass-light rounded-xl p-3 text-xs text-slate-500">
+            <strong class="text-teal-300">Cold start:</strong> When no prior EMA exists, the system seeds from the <em>non-zero</em> tail mean of the last 7 days — never from zero-padded days.
+          </div>
+        </div>
       </div>
 
       <!-- right: step-by-step numerical example + EMA chart -->
@@ -880,13 +912,14 @@
         <!-- how EMA feeds baseline -->
         <div class="glass-light rounded-2xl p-5 mt-5 border border-teal-500/20 text-sm">
           <div class="text-xs text-teal-400 font-semibold uppercase tracking-widest mb-3">How EMA Becomes a Forecast</div>
-          <div class="font-mono text-center text-base text-white mb-3">
-            Baseline = EMA × Bias × EventMultiplier
+          <div class="font-mono text-center text-sm text-white mb-3">
+            Baseline = (EMA + trend) × Bias × EventMultiplier × WdMultiplier
           </div>
-          <div class="grid grid-cols-3 gap-3 text-center text-xs text-slate-400">
-            <div><strong class="text-teal-300 block text-sm">EMA</strong>Short-term demand memory</div>
-            <div><strong class="text-brand-300 block text-sm">Bias</strong>Self-correction for past errors</div>
+          <div class="grid grid-cols-4 gap-2 text-center text-xs text-slate-400">
+            <div><strong class="text-teal-300 block text-sm">EMA+trend</strong>Demand memory + Holt's trend</div>
+            <div><strong class="text-brand-300 block text-sm">Bias</strong>Rolling 7-day self-correction</div>
             <div><strong class="text-amber-300 block text-sm">Event ×</strong>Holiday / promo uplift</div>
+            <div><strong class="text-purple-300 block text-sm">WdMult</strong>Per-SKU weekday index</div>
           </div>
         </div>
       </div>
@@ -931,7 +964,7 @@
           <span class="vel-medium sarima-badge">🚶 Medium</span>
           <span class="text-slate-500 text-xs">0.5–3/day</span>
         </div>
-        <p class="text-sm text-slate-400 mb-4 leading-relaxed">Consistent, regular sellers. SARIMA activates to learn weekly patterns and trends. Blended 65% baseline / 35% SARIMA.</p>
+        <p class="text-sm text-slate-400 mb-4 leading-relaxed">Consistent, regular sellers. SARIMA activates to learn weekly patterns and trends. Blended 65% baseline / 35% SARIMA (confidence-adjusted).</p>
         <div class="text-xs text-slate-500">Models active: <span class="text-blue-400 font-semibold">EMA + SARIMA</span></div>
       </div>
 
@@ -940,7 +973,7 @@
           <span class="vel-fast sarima-badge">🚀 Fast</span>
           <span class="text-slate-500 text-xs">≥ 3/day</span>
         </div>
-        <p class="text-sm text-slate-400 mb-4 leading-relaxed">High-volume, high-confidence SKUs. All three layers run. Blended 35% baseline / 45% SARIMA / 20% ML.</p>
+        <p class="text-sm text-slate-400 mb-4 leading-relaxed">High-volume, high-confidence SKUs. All three layers run. Blended 35% baseline / 45% SARIMA / 20% ML (confidence-adjusted).</p>
         <div class="text-xs text-slate-500">Models active: <span class="text-green-400 font-semibold">EMA + SARIMA + ML</span></div>
       </div>
     </div>
@@ -955,15 +988,15 @@
       <div class="grid sm:grid-cols-3 gap-4 text-sm">
         <div class="flex items-start gap-3">
           <div class="w-2 h-2 rounded-full bg-red-400 mt-1.5 flex-shrink-0"></div>
-          <div><strong class="text-white">Zero-Sales Guard</strong><br/><span class="text-slate-400 text-xs">If last 7 days = 0 units, velocity is capped at Slow, blocking SARIMA/ML.</span></div>
+          <div><strong class="text-white">Zero-Sales Guard</strong><br/><span class="text-slate-400 text-xs">If last 7 <em>open</em> trading days = 0 units (closure days excluded), velocity is capped at Slow, blocking SARIMA/ML.</span></div>
         </div>
         <div class="flex items-start gap-3">
           <div class="w-2 h-2 rounded-full bg-amber-400 mt-1.5 flex-shrink-0"></div>
-          <div><strong class="text-white">Demand Collapse Guard</strong><br/><span class="text-slate-400 text-xs">Last 7-day average &lt; 50% of the prior 14-day average → forced Slow + EMA reset.</span></div>
+          <div><strong class="text-white">Demand Collapse Guard</strong><br/><span class="text-slate-400 text-xs">Last 7-day <em>open</em> series mean &lt; 50% of prior 14-day mean → forced Slow + EMA dampened by ×0.7. Uses <code class="text-amber-300">open_series.tail(7)</code> (excludes closed days) so holiday gaps do not trigger false collapses.</span></div>
         </div>
         <div class="flex items-start gap-3">
           <div class="w-2 h-2 rounded-full bg-rose-400 mt-1.5 flex-shrink-0"></div>
-          <div><strong class="text-white">Inactivity Guard</strong><br/><span class="text-slate-400 text-xs">If stored last-sale-date is 7+ days ago, velocity overridden to Dead regardless.</span></div>
+          <div><strong class="text-white">Inactivity Guard</strong><br/><span class="text-slate-400 text-xs">Both the 7-day open-day check and the stored <code class="text-rose-300">last_sale_date</code> gap exclude business closure days — e.g. Eid ul Fitr will not falsely mark a product dead.</span></div>
         </div>
       </div>
     </div>
@@ -1109,6 +1142,21 @@
           <span class="text-amber-400 text-base flex-shrink-0">⚠️</span>
           <span>SARIMA only activates when a SKU has <strong class="text-slate-300">at least 21 days</strong> of history and is classified as <strong class="text-slate-300">medium or fast</strong>. For newer products, the system relies on the EMA baseline.</span>
         </div>
+
+        <!-- cache note -->
+        <div class="mt-3 flex items-start gap-3 text-xs text-slate-500 glass rounded-xl p-4 border border-brand-500/15">
+          <span class="text-brand-400 text-base flex-shrink-0">💾</span>
+          <span><strong class="text-slate-300">Model File Cache:</strong> Fitted SARIMA parameters are saved to disk (TTL = 7 days). Subsequent daily runs reuse the cached model via <code class="text-brand-300">apply(refit=False)</code> — skipping expensive re-optimization and cutting per-SKU run time significantly. Stale cache files are cleaned automatically at engine startup.</span>
+        </div>
+
+        <!-- confidence-weighted blending note -->
+        <div class="mt-3 flex items-start gap-3 text-xs text-slate-500 glass rounded-xl p-4 border border-teal-500/15">
+          <span class="text-teal-400 text-base flex-shrink-0">⚖️</span>
+          <div>
+            <strong class="text-slate-300">Confidence-Weighted SARIMA Blending:</strong>
+            <span> When SARIMA strongly disagrees with the EMA baseline, its blending weight is automatically reduced. The disagreement ratio is computed as <code class="text-teal-300">|sarima − baseline| / max(1, baseline)</code>. SARIMA trust = <code class="text-teal-300">max(0, 1 − disagreement)</code>. The nominal SARIMA weight is then multiplied by this trust score before re-normalising ensemble weights. This prevents a runaway SARIMA prediction from dominating when it deviates wildly from recent demand reality.</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1201,6 +1249,157 @@
 
 
 <!-- ════════════════════════════════════════════════════════════
+     5 ACCURACY IMPROVEMENTS
+═══════════════════════════════════════════════════════════════ -->
+<section id="accuracy" class="py-24 px-6 relative overflow-hidden">
+  <div class="absolute inset-0 bg-gradient-to-br from-brand-900/20 to-transparent pointer-events-none"></div>
+
+  <div class="max-w-6xl mx-auto relative z-10">
+    <div class="text-center mb-16 reveal">
+      <div class="text-brand-400 text-sm font-semibold uppercase tracking-widest mb-3">Accuracy Improvements</div>
+      <h2 class="text-3xl sm:text-5xl font-bold mb-4">5 New Accuracy Enhancements</h2>
+      <p class="text-slate-400 max-w-2xl mx-auto">Recent development cycles added five targeted improvements that make the engine measurably more accurate across SKU types, weekdays, and multi-day forecast horizons.</p>
+    </div>
+
+    <div class="space-y-6 reveal">
+
+      <!-- 1: Per-SKU Weekday Index -->
+      <div class="glass rounded-2xl p-6 lift border-l-4 border-teal-500">
+        <div class="flex items-start gap-4">
+          <div class="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center font-bold text-teal-300 flex-shrink-0 text-lg">1</div>
+          <div class="flex-1">
+            <div class="flex items-center gap-3 mb-2 flex-wrap">
+              <h3 class="font-bold text-lg">Per-SKU Weekday Index</h3>
+              <span class="sarima-badge bg-teal-900/30 text-teal-300 border border-teal-500/20 text-[11px]">_compute_weekday_index()</span>
+            </div>
+            <p class="text-slate-400 text-sm leading-relaxed mb-4">Each SKU gets its own Monday-through-Sunday demand multiplier computed from historical data. Unlike SARIMA's global seasonality, this is a direct empirical ratio: how much does this specific SKU sell on a given weekday compared to its overall average?</p>
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div class="glass-light rounded-xl p-4">
+                <div class="text-xs text-teal-400 font-semibold uppercase tracking-widest mb-2">Formula</div>
+                <div class="font-mono text-sm text-white">wd_mult = avg_sales_on_weekday / overall_avg</div>
+                <div class="text-xs text-slate-500 mt-2">Applied as: <code class="text-teal-300">raw_b = effective_ema × bias × event_mult × wd_mult</code></div>
+              </div>
+              <div class="glass-light rounded-xl p-4">
+                <div class="text-xs text-teal-400 font-semibold uppercase tracking-widest mb-2">Requirements &amp; Safeguards</div>
+                <ul class="text-xs text-slate-400 space-y-1">
+                  <li class="flex gap-2"><span class="text-teal-400">→</span> Requires ≥ 14 non-zero sale days total</li>
+                  <li class="flex gap-2"><span class="text-teal-400">→</span> Requires ≥ 2 occurrences per weekday</li>
+                  <li class="flex gap-2"><span class="text-teal-400">→</span> Multiplier clamped to [0.1, 3.0]</li>
+                  <li class="flex gap-2"><span class="text-teal-400">→</span> Falls back to 1.0 if insufficient data</li>
+                </ul>
+              </div>
+            </div>
+            <div class="mt-3 text-xs text-slate-500 glass rounded-lg p-3">
+              Config: <code class="text-teal-300">_WEEKDAY_MIN_DAYS=14</code>, <code class="text-teal-300">_WEEKDAY_MIN_OCC=2</code>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2: Holt's Double Exponential Smoothing -->
+      <div class="glass rounded-2xl p-6 lift border-l-4 border-brand-500">
+        <div class="flex items-start gap-4">
+          <div class="w-10 h-10 rounded-xl bg-brand-500/20 flex items-center justify-center font-bold text-brand-300 flex-shrink-0 text-lg">2</div>
+          <div class="flex-1">
+            <div class="flex items-center gap-3 mb-2 flex-wrap">
+              <h3 class="font-bold text-lg">Holt's Double Exponential Smoothing</h3>
+              <span class="sarima-badge bg-brand-900/30 text-brand-300 border border-brand-500/20 text-[11px]">trend_factor per SKU</span>
+            </div>
+            <p class="text-slate-400 text-sm leading-relaxed mb-4">A second EMA runs in parallel to track the <em>trend</em> in demand — whether it is rising, flat, or declining. This is Holt's method (double exponential smoothing). The trend is stored per SKU in the <code class="text-brand-300">trend_factor</code> column of <code class="text-brand-300">forecast_models</code> and added to the rolling EMA before applying multipliers.</p>
+            <div class="grid sm:grid-cols-2 gap-4">
+              <div class="glass-light rounded-xl p-4">
+                <div class="text-xs text-brand-400 font-semibold uppercase tracking-widest mb-2">Formula</div>
+                <div class="font-mono text-xs text-white space-y-1">
+                  <div>trend = β × (ema_new − ema_prev) + (1−β) × trend_prev</div>
+                  <div class="text-slate-400 mt-2">effective_ema = rolling_ema + trend</div>
+                </div>
+              </div>
+              <div class="glass-light rounded-xl p-4">
+                <div class="text-xs text-brand-400 font-semibold uppercase tracking-widest mb-2">Config</div>
+                <div class="text-sm font-mono text-brand-300">TREND_BETA = 0.05</div>
+                <p class="text-xs text-slate-500 mt-2">Low β = slow trend update — avoids over-reacting to a single day's change. Trend persists in the DB between runs.</p>
+              </div>
+            </div>
+            <div class="mt-3 text-xs text-slate-500 glass rounded-lg p-3">
+              New column: <code class="text-brand-300">trend_factor DOUBLE</code> added to <code class="text-brand-300">forecast_models</code> table.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3: Rolling 7-Day Bias Correction -->
+      <div class="glass rounded-2xl p-6 lift border-l-4 border-amber-500">
+        <div class="flex items-start gap-4">
+          <div class="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center font-bold text-amber-300 flex-shrink-0 text-lg">3</div>
+          <div class="flex-1">
+            <div class="flex items-center gap-3 mb-2 flex-wrap">
+              <h3 class="font-bold text-lg">Rolling 7-Day Bias Correction</h3>
+              <span class="sarima-badge bg-amber-900/30 text-amber-300 border border-amber-500/20 text-[11px]">learn_bias()</span>
+            </div>
+            <p class="text-slate-400 text-sm leading-relaxed mb-4">Previously, <code class="text-amber-300">learn_bias()</code> compared only <em>yesterday's</em> forecast against actual. Now it accepts a rolling window of the last 7 <code class="text-amber-300">(forecasted, actual)</code> pairs, computes the mean error ratio across all valid pairs, and uses that for the bias update. A single outlier day no longer dominates the correction signal.</p>
+            <div class="glass-light rounded-xl p-4">
+              <div class="text-xs text-amber-400 font-semibold uppercase tracking-widest mb-2">Formula</div>
+              <div class="font-mono text-xs text-white">mean_error_ratio = mean([(actual − forecast) / forecast  for valid (f,a) pairs])</div>
+              <div class="text-xs text-slate-500 mt-2">(0, 0) dead pairs are filtered out. Bias clamped to [BIAS_MIN=0.75, BIAS_MAX=1.35].</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4: Confidence-Weighted SARIMA Blending -->
+      <div class="glass rounded-2xl p-6 lift border-l-4 border-purple-500">
+        <div class="flex items-start gap-4">
+          <div class="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center font-bold text-purple-300 flex-shrink-0 text-lg">4</div>
+          <div class="flex-1">
+            <div class="flex items-center gap-3 mb-2 flex-wrap">
+              <h3 class="font-bold text-lg">Confidence-Weighted SARIMA Blending</h3>
+              <span class="sarima-badge bg-purple-900/30 text-purple-300 border border-purple-500/20 text-[11px]">sarima_trust score</span>
+            </div>
+            <p class="text-slate-400 text-sm leading-relaxed mb-4">When the SARIMA forecast strongly disagrees with the EMA baseline, its weight in the ensemble blend is automatically reduced. This prevents a misfitted or stale SARIMA model from distorting an otherwise healthy forecast. Only active when both baseline and SARIMA predictions are positive.</p>
+            <div class="grid sm:grid-cols-3 gap-4">
+              <div class="glass-light rounded-xl p-3">
+                <div class="text-xs text-purple-400 font-semibold mb-2">Step 1 — Disagreement</div>
+                <div class="font-mono text-xs text-white">disagreement = |sarima − baseline| / max(1, baseline)</div>
+              </div>
+              <div class="glass-light rounded-xl p-3">
+                <div class="text-xs text-purple-400 font-semibold mb-2">Step 2 — Trust Score</div>
+                <div class="font-mono text-xs text-white">sarima_trust = max(0, 1 − disagreement)</div>
+              </div>
+              <div class="glass-light rounded-xl p-3">
+                <div class="text-xs text-purple-400 font-semibold mb-2">Step 3 — Adjusted Weight</div>
+                <div class="font-mono text-xs text-white">ws_adjusted = ws × sarima_trust</div>
+                <div class="text-xs text-slate-500 mt-1">Weights re-normalised after adjustment</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5: Forward Rolling EMA Simulation -->
+      <div class="glass rounded-2xl p-6 lift border-l-4 border-green-500">
+        <div class="flex items-start gap-4">
+          <div class="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center font-bold text-green-300 flex-shrink-0 text-lg">5</div>
+          <div class="flex-1">
+            <div class="flex items-center gap-3 mb-2 flex-wrap">
+              <h3 class="font-bold text-lg">Forward Rolling EMA Simulation</h3>
+              <span class="sarima-badge bg-green-900/30 text-green-300 border border-green-500/20 text-[11px]">Days 2–5</span>
+            </div>
+            <p class="text-slate-400 text-sm leading-relaxed mb-4">Without this improvement, Days 2–5 of a 5-day forecast all used the same stale stored EMA, producing an unrealistically flat multi-day output. Now the engine simulates forward: after each open forecast day is computed, it updates a <em>rolling EMA</em> as if that forecast quantity were the next real sale. Days 2–5 then use this evolved EMA, producing a more natural, gradually shifting multi-day forecast.</p>
+            <div class="glass-light rounded-xl p-4">
+              <div class="text-xs text-green-400 font-semibold uppercase tracking-widest mb-2">Simulation Formula (per open day)</div>
+              <div class="font-mono text-xs text-white">rolling_ema = α × qty_forecast + (1 − α) × rolling_ema</div>
+              <div class="text-xs text-slate-500 mt-2">Starts at today's stored EMA. Applied after each open day. Closed days keep rolling_ema unchanged.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /space-y-6 -->
+  </div>
+</section>
+
+
+<!-- ════════════════════════════════════════════════════════════
      BIAS LEARNING / SELF-CORRECTION
 ═══════════════════════════════════════════════════════════════ -->
 <section class="py-24 px-6 relative overflow-hidden">
@@ -1209,7 +1408,7 @@
     <div class="text-center mb-12 reveal">
       <div class="text-amber-400 text-sm font-semibold uppercase tracking-widest mb-3">Self-Learning</div>
       <h2 class="text-3xl sm:text-4xl font-bold mb-4">The System Learns From Its Own Mistakes</h2>
-      <p class="text-slate-400 max-w-xl mx-auto">Each morning, before generating today's forecast, the engine compares what it predicted yesterday against what actually sold. It then adjusts a per-SKU <em>bias factor</em> to correct for systematic errors.</p>
+      <p class="text-slate-400 max-w-xl mx-auto">Each morning, before generating today's forecast, the engine compares the last 7 days of forecasts against actual sales and adjusts a per-SKU <em>bias factor</em> to correct for systematic errors. Using a rolling 7-day window instead of just yesterday's single data point makes bias learning far more stable.</p>
     </div>
 
     <!-- bias learning flow -->
@@ -1247,13 +1446,44 @@
         </div>
         <div>
           <div class="text-amber-300 font-mono text-lg font-bold mb-1">BIAS_LR = 0.10</div>
-          <div class="text-xs text-slate-400">Bias correction speed — how quickly systematic over/under-forecasting is fixed</div>
+          <div class="text-xs text-slate-400">Bias correction speed — computed from mean error ratio over last 7 days: <code class="text-amber-300">mean((actual−forecast)/forecast)</code>. (0,0) dead pairs are excluded. Clamped to [BIAS_MIN=0.75, BIAS_MAX=1.35].</div>
         </div>
         <div>
           <div class="text-teal-300 font-mono text-lg font-bold mb-1">EVENT_LR = 0.05</div>
-          <div class="text-xs text-slate-400">Holiday learning speed — how fast Eid/Ramadan uplift factors improve year-over-year</div>
+          <div class="text-xs text-slate-400">Holiday learning speed — how fast Eid/Ramadan uplift factors improve year-over-year. Uplifts clamped to [0.5, 3.0].</div>
         </div>
       </div>
+    </div>
+
+    <!-- uplift learning flow -->
+    <div class="glass rounded-2xl p-6 mt-6 reveal">
+      <div class="flex items-center gap-3 mb-4">
+        <span class="text-xl">🎯</span>
+        <span class="font-semibold">Event Uplift Learning</span>
+        <span class="text-xs text-slate-500 ml-auto">Runs after each event day</span>
+      </div>
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-3 text-sm">
+        <div class="glass-light rounded-xl p-4 text-center w-40">
+          <div class="text-xs text-slate-400 mb-1">Actual Sales on Event Day</div>
+          <div class="font-bold text-teal-300">80 units</div>
+        </div>
+        <div class="text-brand-400">÷</div>
+        <div class="glass-light rounded-xl p-4 text-center w-40">
+          <div class="text-xs text-slate-400 mb-1">Forecasted Qty (from DB)</div>
+          <div class="font-bold text-brand-300">40 units</div>
+        </div>
+        <div class="text-brand-400">=</div>
+        <div class="glass-light rounded-xl p-4 text-center w-40">
+          <div class="text-xs text-slate-400 mb-1">Observed Ratio</div>
+          <div class="font-bold text-amber-300">2.0×</div>
+        </div>
+        <div class="text-brand-400">→</div>
+        <div class="glass-light rounded-xl p-4 text-center w-44 border border-green-500/30">
+          <div class="text-xs text-slate-400 mb-1">New Uplift</div>
+          <div class="font-bold text-green-300">1.0 + 0.05×(2.0−1.0) = 1.05</div>
+        </div>
+      </div>
+      <p class="text-xs text-slate-500 mt-4 text-center">The denominator is the actual <code class="text-green-300">forecasted_qty</code> stored in the database — not today's EMA — giving a precise per-event accuracy signal.</p>
     </div>
   </div>
 </section>
@@ -1666,7 +1896,7 @@
     <div class="text-center mb-16 reveal">
       <div class="text-brand-400 text-sm font-semibold uppercase tracking-widest mb-3">Ensemble Pipeline</div>
       <h2 class="text-3xl sm:text-5xl font-bold mb-4">From Raw Data to Final Number</h2>
-      <p class="text-slate-400">Every SKU passes through all six stages every day.</p>
+      <p class="text-slate-400">Every SKU passes through all eight stages every day.</p>
     </div>
 
     <div id="flowSteps" class="space-y-2 reveal">
@@ -1687,9 +1917,9 @@
         <div class="flex-1">
           <div class="flex items-center justify-between">
             <span class="font-semibold">2 · Velocity Classified</span>
-            <span class="text-xs text-slate-500 font-mono">Last 15 days</span>
+            <span class="text-xs text-slate-500 font-mono">Last 15 open days</span>
           </div>
-          <div class="text-xs text-slate-400 mt-1">Dead / Slow / Medium / Fast label determines which models run</div>
+          <div class="text-xs text-slate-400 mt-1">Dead / Slow / Medium / Fast label — closure-day-aware guards applied</div>
         </div>
       </div>
 
@@ -1697,10 +1927,10 @@
         <div class="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center text-xl flex-shrink-0">📊</div>
         <div class="flex-1">
           <div class="flex items-center justify-between">
-            <span class="font-semibold">3 · EMA Baseline Computed</span>
-            <span class="text-xs text-slate-500 font-mono">α = 0.30</span>
+            <span class="font-semibold">3 · EMA + Holt Trend Baseline</span>
+            <span class="text-xs text-slate-500 font-mono">α=0.30, β=0.05</span>
           </div>
-          <div class="text-xs text-slate-400 mt-1">Short-term demand memory × bias correction × event multiplier</div>
+          <div class="text-xs text-slate-400 mt-1">Effective EMA = rolling_ema + trend_factor; multiplied by bias, event, weekday-index</div>
         </div>
       </div>
 
@@ -1711,7 +1941,7 @@
             <span class="font-semibold">4 · SARIMA Forecast</span>
             <span class="text-xs text-slate-500 font-mono">Medium + Fast</span>
           </div>
-          <div class="text-xs text-slate-400 mt-1">Weekly seasonality model adds trend and cycle awareness</div>
+          <div class="text-xs text-slate-400 mt-1">Weekly seasonality model; confidence-weighted blend reduces SARIMA weight when it diverges strongly</div>
         </div>
       </div>
 
@@ -1733,7 +1963,18 @@
             <span class="font-semibold">6 · Weighted Blend + Safety Caps</span>
             <span class="text-xs text-slate-500 font-mono">Hard max 500</span>
           </div>
-          <div class="text-xs text-slate-400 mt-1">Dynamic weights normalised; quantity clipped to velocity-aware cap; closed days → 0</div>
+          <div class="text-xs text-slate-400 mt-1">Confidence-adjusted weights normalised; quantity clipped to velocity-aware cap; closed days → 0</div>
+        </div>
+      </div>
+
+      <div class="flow-step glass rounded-2xl p-5 flex items-center gap-5 lift opacity-0 translate-y-4 transition-all duration-500" style="transition-delay:.66s">
+        <div class="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center text-xl flex-shrink-0">🔄</div>
+        <div class="flex-1">
+          <div class="flex items-center justify-between">
+            <span class="font-semibold">6b · Forward Rolling EMA Simulation</span>
+            <span class="text-xs text-slate-500 font-mono">Days 2–5</span>
+          </div>
+          <div class="text-xs text-slate-400 mt-1">After each open forecast day: <code class="text-indigo-300">rolling_ema = α×qty + (1−α)×rolling_ema</code>. Days 2–5 use the simulated EMA, not the stale stored value — avoids flat multi-day forecasts</div>
         </div>
       </div>
 
@@ -1744,7 +1985,29 @@
             <span class="font-semibold text-green-300">Final Forecast Written to MySQL</span>
             <span class="text-xs text-slate-500 font-mono">Upsert-safe</span>
           </div>
-          <div class="text-xs text-slate-400 mt-1">sales_forecast + forecast_models updated; run is idempotent</div>
+          <div class="text-xs text-slate-400 mt-1"><code class="text-green-300">forecast_product()</code> returns 6-tuple: <code class="text-green-300">(qtys, events, ema, velocity, method, trend)</code>. sales_forecast + forecast_models (incl. trend_factor column) updated; run is idempotent</div>
+        </div>
+      </div>
+
+      <div class="flow-step glass rounded-2xl p-5 flex items-center gap-5 lift opacity-0 translate-y-4 transition-all duration-500" style="transition-delay:.84s">
+        <div class="w-12 h-12 rounded-xl bg-teal-500/20 flex items-center justify-center text-xl flex-shrink-0">🎯</div>
+        <div class="flex-1">
+          <div class="flex items-center justify-between">
+            <span class="font-semibold">7 · Rolling Bias + Event Uplift Learning</span>
+            <span class="text-xs text-slate-500 font-mono">Post-run</span>
+          </div>
+          <div class="text-xs text-slate-400 mt-1">7-day rolling bias correction; event actual ÷ forecasted_qty → EMA-updates per event type; clamped [0.5, 3.0]</div>
+        </div>
+      </div>
+
+      <div class="flow-step glass rounded-2xl p-5 flex items-center gap-5 lift opacity-0 translate-y-4 transition-all duration-500 border border-brand-500/20" style="transition-delay:.96s">
+        <div class="w-12 h-12 rounded-xl bg-brand-500/20 flex items-center justify-center text-xl flex-shrink-0">🔒</div>
+        <div class="flex-1">
+          <div class="flex items-center justify-between">
+            <span class="font-semibold">8 · Lock Released + Health Check</span>
+            <span class="text-xs text-slate-500 font-mono">Reliability</span>
+          </div>
+          <div class="text-xs text-slate-400 mt-1">PID lock file released; health-check timestamp written; rolling 7-day MAPE accuracy logged</div>
         </div>
       </div>
     </div>
@@ -1884,6 +2147,35 @@
         </div>
         <p class="text-xs text-slate-400 leading-relaxed">The engine runs as a scheduled daily job. All writes are upsert-safe — re-running any time is safe and will overwrite the existing forecast for the same date.</p>
       </div>
+
+      <div class="glass rounded-2xl p-6 lift border border-brand-500/15">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-green-500/15 flex items-center justify-center text-lg">🛡️</div>
+          <div><div class="font-semibold tech-title">Production Reliability</div><div class="text-xs text-slate-500 tech-sub">Ops hardening</div></div>
+        </div>
+        <ul class="text-xs text-slate-400 space-y-1.5 leading-relaxed">
+          <li class="flex gap-2"><span class="text-green-400 flex-shrink-0">✓</span><span><strong class="text-slate-300">Run lock file</strong> (PID-based) prevents two overlapping cron runs</span></li>
+          <li class="flex gap-2"><span class="text-green-400 flex-shrink-0">✓</span><span><strong class="text-slate-300">DB retry</strong> — 3 attempts with 2 s/4 s backoff on transient failures</span></li>
+          <li class="flex gap-2"><span class="text-green-400 flex-shrink-0">✓</span><span><strong class="text-slate-300">DRY_RUN mode</strong> — skips all DB writes for staging validation</span></li>
+          <li class="flex gap-2"><span class="text-green-400 flex-shrink-0">✓</span><span><strong class="text-slate-300">Health check file</strong> — touched on success; configurable path</span></li>
+          <li class="flex gap-2"><span class="text-green-400 flex-shrink-0">✓</span><span><strong class="text-slate-300">MAPE logging</strong> — rolling 7-day accuracy tracked and logged each run</span></li>
+          <li class="flex gap-2"><span class="text-green-400 flex-shrink-0">✓</span><span><strong class="text-slate-300">Colored logging</strong> — DEBUG=cyan, INFO=green, WARNING=yellow, ERROR=red, CRITICAL=bold red</span></li>
+        </ul>
+      </div>
+
+      <div class="glass rounded-2xl p-6 lift">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-purple-500/15 flex items-center justify-center text-lg">🧪</div>
+          <div><div class="font-semibold tech-title">pytest · 151 tests</div><div class="text-xs text-slate-500 tech-sub">Test coverage</div></div>
+        </div>
+        <p class="text-xs text-slate-400 leading-relaxed mb-3">Comprehensive test suite covering the forecast engine, EMA edge cases, event uplift learning, DB retry logic, velocity classification, model store, and config parsing — all running in-memory with no DB dependency.</p>
+        <div class="flex flex-wrap gap-1.5 text-[10px]">
+          <span class="sarima-badge bg-purple-900/30 text-purple-300 border border-purple-500/20">EMA cold start</span>
+          <span class="sarima-badge bg-teal-900/30 text-teal-300 border border-teal-500/20">Uplift learning</span>
+          <span class="sarima-badge bg-brand-900/30 text-brand-300 border border-brand-500/20">DB retry</span>
+          <span class="sarima-badge bg-amber-900/30 text-amber-300 border border-amber-500/20">Velocity guards</span>
+        </div>
+      </div>
     </div>
 
     <!-- performance note -->
@@ -1899,8 +2191,8 @@
           <div class="text-xs text-slate-400">per SKU avg</div>
         </div>
         <div class="text-center glass-light rounded-xl p-3">
-          <div class="text-xl font-bold text-brand-300">1 query</div>
-          <div class="text-xs text-slate-400">bias fetch (batch)</div>
+          <div class="text-xl font-bold text-brand-300">2 queries</div>
+          <div class="text-xs text-slate-400">bias + uplift batch fetch</div>
         </div>
       </div>
     </div>
@@ -1919,7 +2211,7 @@
     </div>
     <div class="text-xs text-slate-600 text-center">
       Built for high-scale retail forecasting with real-world business constraints.<br/>
-      Python · pandas · statsmodels · SARIMA · SQLAlchemy · MySQL
+      Python · pandas · statsmodels · SARIMA · SQLAlchemy · MySQL · 151 tests passing
     </div>
     <div class="text-xs text-slate-600">AI-generated forecasts — always review before ordering.</div>
   </div>
@@ -2470,9 +2762,10 @@ window.addEventListener('scroll', () => {
 (function () {
   const phrases = [
     'Predicting demand for 10,000+ SKUs — every day.',
-    'EMA · SARIMA · Gradient Boosting — blended intelligently.',
-    'Self-learning bias correction on every run.',
+    'EMA + Holt Trend · SARIMA · ML — confidence-blended.',
+    'Rolling 7-day bias correction on every run.',
     'Event-aware: Eid, Ramadan, Payday — all modelled.',
+    'Per-SKU weekday index + forward rolling EMA simulation.',
   ];
   const el = document.getElementById('typewriter-text');
   if (!el) return;
